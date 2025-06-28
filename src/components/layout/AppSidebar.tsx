@@ -30,10 +30,11 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
+  const isCollapsed = state === 'collapsed';
 
   return (
-    <Sidebar className={collapsed ? "w-16" : "w-64"} collapsible>
+    <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
       <SidebarContent className="bg-white">
         {/* Logo */}
         <div className="p-6 border-b">
@@ -41,7 +42,7 @@ export function AppSidebar() {
             <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
               <Zap className="h-4 w-4 text-white" />
             </div>
-            {!collapsed && (
+            {!isCollapsed && (
               <span className="text-xl font-bold text-gray-900">Planud</span>
             )}
           </div>
@@ -49,7 +50,7 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            {!collapsed && 'Menu Principal'}
+            {!isCollapsed && 'Menu Principal'}
           </SidebarGroupLabel>
           <SidebarGroupContent className="px-3">
             <SidebarMenu>
@@ -61,7 +62,7 @@ export function AppSidebar() {
                       className="flex items-center space-x-3 px-3 py-3 rounded-xl text-gray-700 hover:bg-gray-100 hover:text-indigo-600 transition-colors font-medium"
                     >
                       <item.icon className="h-5 w-5" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!isCollapsed && <span>{item.title}</span>}
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
