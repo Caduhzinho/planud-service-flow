@@ -3,8 +3,11 @@ import { DashboardStats } from './DashboardStats';
 import { RevenueChart } from './RevenueChart';
 import { UpcomingAppointments } from './UpcomingAppointments';
 import { QuickActions } from './QuickActions';
+import { useAuth } from '@/hooks/useAuth';
 
 export const Dashboard = () => {
+  const { userData } = useAuth();
+
   return (
     <div className="space-y-8">
       <div>
@@ -12,7 +15,7 @@ export const Dashboard = () => {
           Dashboard
         </h1>
         <p className="text-gray-600">
-          Visão geral da sua empresa
+          Bem-vindo, {userData?.nome}! Aqui está o resumo da {userData?.empresa?.nome}
         </p>
       </div>
 

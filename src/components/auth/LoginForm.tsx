@@ -5,6 +5,9 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Zap } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface LoginFormProps {
   onBack: () => void;
@@ -14,11 +17,33 @@ interface LoginFormProps {
 export const LoginForm = ({ onBack, onRegister }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement Supabase auth
-    console.log('Login attempt:', { email, password });
+    setLoading(true);
+
+    try {
+      const { error } = await signIn(email, password);
+
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Email ou senha incorretos');
+        } else {
+          toast.error('Erro ao fazer login: ' + error.message);
+        }
+      } else {
+        toast.success('Login realizado com sucesso!');
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      toast.error('Erro inesperado ao fazer login');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -75,8 +100,9 @@ export const LoginForm = ({ onBack, onRegister }: LoginFormProps) => {
           <Button 
             type="submit" 
             className="w-full bg-indigo-600 hover:bg-indigo-700 h-11 rounded-xl font-medium"
+            disabled={loading}
           >
-            Entrar
+            {loading ? 'Entrando...' : 'Entrar'}
           </Button>
         </form>
 
