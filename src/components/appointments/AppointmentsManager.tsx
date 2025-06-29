@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,7 +39,7 @@ const statusConfig = {
 };
 
 export const AppointmentsManager = () => {
-  const { userData } = useAuth();
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,21 +48,64 @@ export const AppointmentsManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('upcoming');
+  const [userEmpresaId, setUserEmpresaId] = useState<string | null>(null);
+
+  const fetchUserData = async () => {
+    if (!user?.id) return;
+
+    try {
+      console.log('Buscando dados do usuário:', user.id);
+      
+      // Buscar empresa_id diretamente do metadata do usuário ou da tabela usuarios
+      const empresaId = user.user_metadata?.empresa_id;
+      
+      if (empresaId) {
+        setUserEmpresaId(empresaId);
+        return empresaId;
+      }
+
+      // Fallback: buscar da tabela usuarios sem join
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('empresa_id')
+        .eq('id', user.id)
+        .single();
+
+      if (userError) {
+        console.error('Erro ao buscar dados do usuário:', userError);
+        throw userError;
+      }
+
+      if (userData?.empresa_id) {
+        setUserEmpresaId(userData.empresa_id);
+        return userData.empresa_id;
+      }
+
+      throw new Error('Empresa não encontrada para este usuário');
+    } catch (error) {
+      console.error('Erro ao buscar dados do usuário:', error);
+      throw error;
+    }
+  };
 
   const fetchAppointments = async () => {
     console.log('Iniciando busca de agendamentos...');
-    console.log('userData:', userData);
     
-    if (!userData?.empresa_id) {
-      console.log('empresa_id não encontrado, aguardando...');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      console.log('Buscando agendamentos para empresa_id:', userData.empresa_id);
+      // Garantir que temos o empresa_id
+      let empresaId = userEmpresaId;
+      if (!empresaId) {
+        empresaId = await fetchUserData();
+      }
+
+      if (!empresaId) {
+        throw new Error('Empresa não identificada');
+      }
+
+      console.log('Buscando agendamentos para empresa_id:', empresaId);
       
       const { data, error } = await supabase
         .from('agendamentos')
@@ -79,7 +121,7 @@ export const AppointmentsManager = () => {
             telefone
           )
         `)
-        .eq('empresa_id', userData.empresa_id)
+        .eq('empresa_id', empresaId)
         .order('data_hora', { ascending: true });
 
       console.log('Resposta da consulta:', { data, error });
@@ -91,9 +133,9 @@ export const AppointmentsManager = () => {
       
       setAppointments(data || []);
       console.log('Agendamentos carregados:', data?.length || 0);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao buscar agendamentos:', error);
-      setError('Erro ao carregar agendamentos. Tente novamente.');
+      setError(error.message || 'Erro ao carregar agendamentos. Tente novamente.');
       toast.error('Erro ao carregar agendamentos');
     } finally {
       setLoading(false);
@@ -101,14 +143,13 @@ export const AppointmentsManager = () => {
   };
 
   useEffect(() => {
-    if (userData?.empresa_id) {
+    if (user?.id) {
       fetchAppointments();
-    } else if (userData !== null) {
-      // userData carregou mas não tem empresa_id
-      setError('Empresa não encontrada para este usuário.');
+    } else {
       setLoading(false);
+      setError('Usuário não autenticado');
     }
-  }, [userData?.empresa_id]);
+  }, [user?.id]);
 
   useEffect(() => {
     let filtered = appointments;
