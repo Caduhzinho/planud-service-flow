@@ -22,7 +22,7 @@ interface Client {
 }
 
 export const ClientsManager = () => {
-  const { userData } = useAuth();
+  const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,17 +30,19 @@ export const ClientsManager = () => {
   const [showAddForm, setShowAddForm] = useState(false);
 
   const fetchClients = async () => {
-    if (!userData?.empresa_id) return;
+    if (!user?.id) return;
 
     try {
+      console.log('Buscando clientes com RLS...');
+      
       const { data, error } = await supabase
         .from('clientes')
         .select('*')
-        .eq('empresa_id', userData.empresa_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
+      console.log('Clientes carregados:', data?.length || 0);
       setClients(data || []);
       setFilteredClients(data || []);
     } catch (error) {
@@ -53,7 +55,7 @@ export const ClientsManager = () => {
 
   useEffect(() => {
     fetchClients();
-  }, [userData?.empresa_id]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {

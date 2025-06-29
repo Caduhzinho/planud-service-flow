@@ -48,45 +48,6 @@ export const AppointmentsManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('upcoming');
-  const [userEmpresaId, setUserEmpresaId] = useState<string | null>(null);
-
-  const fetchUserData = async () => {
-    if (!user?.id) return;
-
-    try {
-      console.log('Buscando dados do usuário:', user.id);
-      
-      // Buscar empresa_id diretamente do metadata do usuário ou da tabela usuarios
-      const empresaId = user.user_metadata?.empresa_id;
-      
-      if (empresaId) {
-        setUserEmpresaId(empresaId);
-        return empresaId;
-      }
-
-      // Fallback: buscar da tabela usuarios sem join
-      const { data: userData, error: userError } = await supabase
-        .from('usuarios')
-        .select('empresa_id')
-        .eq('id', user.id)
-        .single();
-
-      if (userError) {
-        console.error('Erro ao buscar dados do usuário:', userError);
-        throw userError;
-      }
-
-      if (userData?.empresa_id) {
-        setUserEmpresaId(userData.empresa_id);
-        return userData.empresa_id;
-      }
-
-      throw new Error('Empresa não encontrada para este usuário');
-    } catch (error) {
-      console.error('Erro ao buscar dados do usuário:', error);
-      throw error;
-    }
-  };
 
   const fetchAppointments = async () => {
     console.log('Iniciando busca de agendamentos...');
@@ -95,17 +56,7 @@ export const AppointmentsManager = () => {
     setError(null);
 
     try {
-      // Garantir que temos o empresa_id
-      let empresaId = userEmpresaId;
-      if (!empresaId) {
-        empresaId = await fetchUserData();
-      }
-
-      if (!empresaId) {
-        throw new Error('Empresa não identificada');
-      }
-
-      console.log('Buscando agendamentos para empresa_id:', empresaId);
+      console.log('Buscando agendamentos com RLS...');
       
       const { data, error } = await supabase
         .from('agendamentos')
@@ -121,7 +72,6 @@ export const AppointmentsManager = () => {
             telefone
           )
         `)
-        .eq('empresa_id', empresaId)
         .order('data_hora', { ascending: true });
 
       console.log('Resposta da consulta:', { data, error });
