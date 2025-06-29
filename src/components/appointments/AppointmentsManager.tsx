@@ -44,15 +44,27 @@ export const AppointmentsManager = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('upcoming');
 
   const fetchAppointments = async () => {
-    if (!userData?.empresa_id) return;
+    console.log('Iniciando busca de agendamentos...');
+    console.log('userData:', userData);
+    
+    if (!userData?.empresa_id) {
+      console.log('empresa_id não encontrado, aguardando...');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
 
     try {
+      console.log('Buscando agendamentos para empresa_id:', userData.empresa_id);
+      
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -70,11 +82,18 @@ export const AppointmentsManager = () => {
         .eq('empresa_id', userData.empresa_id)
         .order('data_hora', { ascending: true });
 
-      if (error) throw error;
+      console.log('Resposta da consulta:', { data, error });
+
+      if (error) {
+        console.error('Erro na consulta:', error);
+        throw error;
+      }
       
       setAppointments(data || []);
+      console.log('Agendamentos carregados:', data?.length || 0);
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
+      setError('Erro ao carregar agendamentos. Tente novamente.');
       toast.error('Erro ao carregar agendamentos');
     } finally {
       setLoading(false);
@@ -82,7 +101,13 @@ export const AppointmentsManager = () => {
   };
 
   useEffect(() => {
-    fetchAppointments();
+    if (userData?.empresa_id) {
+      fetchAppointments();
+    } else if (userData !== null) {
+      // userData carregou mas não tem empresa_id
+      setError('Empresa não encontrada para este usuário.');
+      setLoading(false);
+    }
   }, [userData?.empresa_id]);
 
   useEffect(() => {
@@ -144,6 +169,17 @@ export const AppointmentsManager = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-lg text-gray-600">Carregando agendamentos...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <div className="text-lg text-red-600">{error}</div>
+        <Button onClick={fetchAppointments} variant="outline">
+          Tentar Novamente
+        </Button>
       </div>
     );
   }
