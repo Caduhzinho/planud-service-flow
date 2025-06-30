@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -36,7 +37,9 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
   const [selectedClient, setSelectedClient] = useState('');
   const [selectedAppointment, setSelectedAppointment] = useState('');
   const [valor, setValor] = useState('');
-  const [formaPagamento, setFormaPagamento] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [formaPagamento, setFormaPagamento] = useState('manual');
+  const [status, setStatus] = useState('gerado');
   const [isLoading, setIsLoading] = useState(false);
   const { userData } = useAuth();
   const { toast } = useToast();
@@ -92,6 +95,7 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
     const appointment = appointments.find(a => a.id === appointmentId);
     if (appointment) {
       setValor(appointment.valor.toString());
+      setDescricao(appointment.servico);
       const client = clients.find(c => c.nome === appointment.clientes.nome);
       if (client) {
         setSelectedClient(client.id);
@@ -99,10 +103,34 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
     }
   };
 
+  const generateInvoiceNumber = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notas_fiscais')
+        .select('codigo_nf')
+        .eq('empresa_id', userData?.empresa_id)
+        .order('criada_em', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      let nextNumber = 1;
+      if (data && data.length > 0 && data[0].codigo_nf) {
+        const lastNumber = parseInt(data[0].codigo_nf.replace(/\D/g, ''));
+        nextNumber = lastNumber + 1;
+      }
+
+      return `NF${nextNumber.toString().padStart(6, '0')}`;
+    } catch (error) {
+      console.error('Erro ao gerar número da nota:', error);
+      return `NF${Date.now().toString().slice(-6)}`;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedClient || !valor) {
+    if (!selectedClient || !valor || !descricao) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos obrigatórios",
@@ -114,6 +142,8 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
     setIsLoading(true);
 
     try {
+      const codigoNf = await generateInvoiceNumber();
+      
       const { error } = await supabase
         .from('notas_fiscais')
         .insert({
@@ -121,22 +151,27 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
           cliente_id: selectedClient,
           agendamento_id: selectedAppointment || null,
           valor: parseFloat(valor),
-          forma_pagamento: formaPagamento || null,
-          status: 'gerado'
+          descricao,
+          forma_pagamento: formaPagamento,
+          status,
+          codigo_nf: codigoNf,
+          data_emissao: new Date().toISOString()
         });
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: "Nota fiscal criada com sucesso",
+        description: `Nota fiscal ${codigoNf} criada com sucesso`,
       });
 
       // Reset form
       setSelectedClient('');
       setSelectedAppointment('');
       setValor('');
-      setFormaPagamento('');
+      setDescricao('');
+      setFormaPagamento('manual');
+      setStatus('gerado');
       onOpenChange(false);
       
       // Refresh the parent component
@@ -155,11 +190,11 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Nova Nota Fiscal</DialogTitle>
           <DialogDescription>
-            Crie uma nova nota fiscal para seu cliente
+            Crie uma nova nota fiscal de serviço para seu cliente
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -168,7 +203,7 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
               <Label htmlFor="appointment">Agendamento (opcional)</Label>
               <Select value={selectedAppointment} onValueChange={handleAppointmentSelect}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um agendamento" />
+                  <SelectValue placeholder="Selecione um agendamento concluído" />
                 </SelectTrigger>
                 <SelectContent>
                   {appointments.map((appointment) => (
@@ -197,6 +232,18 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="descricao">Descrição do Serviço *</Label>
+              <Textarea
+                id="descricao"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Descreva o serviço prestado"
+                required
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="valor">Valor *</Label>
               <Input
                 id="valor"
@@ -210,19 +257,35 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="pagamento">Forma de Pagamento</Label>
-              <Select value={formaPagamento} onValueChange={setFormaPagamento}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a forma de pagamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pix">PIX</SelectItem>
-                  <SelectItem value="boleto">Boleto</SelectItem>
-                  <SelectItem value="cartao">Cartão</SelectItem>
-                  <SelectItem value="manual">Manual</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="pagamento">Forma de Pagamento</Label>
+                <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="boleto">Boleto</SelectItem>
+                    <SelectItem value="cartao">Cartão</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gerado">Gerada</SelectItem>
+                    <SelectItem value="pendente">Pendente</SelectItem>
+                    <SelectItem value="enviado">Enviada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           
