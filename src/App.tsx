@@ -10,6 +10,8 @@ import Index from "./pages/Index";
 import DashboardPage from "./pages/DashboardPage";
 import AppointmentsPage from "./pages/AppointmentsPage";
 import ClientsPage from "./pages/ClientsPage";
+import InvoicesPage from "./pages/InvoicesPage";
+import FinancialPage from "./pages/FinancialPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,16 @@ const App = () => (
             <Route path="/clientes" element={
               <ProtectedRoute>
                 <ClientsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/notas-fiscais" element={
+              <ProtectedRoute>
+                <InvoicesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/financeiro" element={
+              <ProtectedRoute>
+                <FinancialPage />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

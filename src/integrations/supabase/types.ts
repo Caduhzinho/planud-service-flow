@@ -134,6 +134,135 @@ export type Database = {
         }
         Relationships: []
       }
+      financeiro: {
+        Row: {
+          categoria: string | null
+          criado_em: string | null
+          data_lancamento: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          observacoes: string | null
+          origem: string | null
+          pago: boolean | null
+          recorrente: boolean | null
+          tipo: string
+          updated_at: string | null
+          valor: number
+        }
+        Insert: {
+          categoria?: string | null
+          criado_em?: string | null
+          data_lancamento?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          observacoes?: string | null
+          origem?: string | null
+          pago?: boolean | null
+          recorrente?: boolean | null
+          tipo: string
+          updated_at?: string | null
+          valor: number
+        }
+        Update: {
+          categoria?: string | null
+          criado_em?: string | null
+          data_lancamento?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          observacoes?: string | null
+          origem?: string | null
+          pago?: boolean | null
+          recorrente?: boolean | null
+          tipo?: string
+          updated_at?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notas_fiscais: {
+        Row: {
+          agendamento_id: string | null
+          cliente_id: string
+          codigo_nf: string | null
+          criada_em: string | null
+          data_emissao: string | null
+          empresa_id: string
+          enviada: boolean | null
+          forma_pagamento: string | null
+          id: string
+          link_pagamento: string | null
+          pdf_url: string | null
+          status: string | null
+          updated_at: string | null
+          valor: number
+        }
+        Insert: {
+          agendamento_id?: string | null
+          cliente_id: string
+          codigo_nf?: string | null
+          criada_em?: string | null
+          data_emissao?: string | null
+          empresa_id: string
+          enviada?: boolean | null
+          forma_pagamento?: string | null
+          id?: string
+          link_pagamento?: string | null
+          pdf_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor: number
+        }
+        Update: {
+          agendamento_id?: string | null
+          cliente_id?: string
+          codigo_nf?: string | null
+          criada_em?: string | null
+          data_emissao?: string | null
+          empresa_id?: string
+          enviada?: boolean | null
+          forma_pagamento?: string | null
+          id?: string
+          link_pagamento?: string | null
+          pdf_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_fiscais_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_fiscais_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_fiscais_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuarios: {
         Row: {
           created_at: string
