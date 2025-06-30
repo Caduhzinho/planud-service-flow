@@ -53,7 +53,15 @@ export const InvoicesManager = () => {
         .order('data_emissao', { ascending: false });
 
       if (error) throw error;
-      setInvoices(data || []);
+      
+      // Type assertion to ensure proper typing
+      const typedData = (data || []).map(invoice => ({
+        ...invoice,
+        status: invoice.status as 'gerado' | 'enviado' | 'pendente' | 'cancelado',
+        enviada: invoice.enviada ?? false
+      }));
+      
+      setInvoices(typedData);
     } catch (error) {
       console.error('Erro ao carregar notas fiscais:', error);
       toast({

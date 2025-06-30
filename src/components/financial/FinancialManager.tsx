@@ -50,7 +50,16 @@ export const FinancialManager = () => {
         .order('data_lancamento', { ascending: false });
 
       if (error) throw error;
-      setRecords(data || []);
+      
+      // Type assertion to ensure proper typing
+      const typedData = (data || []).map(record => ({
+        ...record,
+        tipo: record.tipo as 'entrada' | 'saida',
+        pago: record.pago ?? true,
+        recorrente: record.recorrente ?? false
+      }));
+      
+      setRecords(typedData);
     } catch (error) {
       console.error('Erro ao carregar registros financeiros:', error);
       toast({
