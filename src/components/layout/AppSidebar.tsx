@@ -1,4 +1,3 @@
-
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -26,7 +25,7 @@ const menuItems = [
   { title: 'Agendamentos', url: '/agendamentos', icon: Calendar },
   { title: 'Clientes', url: '/clientes', icon: Users },
   { title: 'Financeiro', url: '/financeiro', icon: DollarSign },
-  { title: 'Notas Fiscais', url: '/notas', icon: FileText },
+  { title: 'Notas Fiscais', url: '/notas-fiscais', icon: FileText },
   { title: 'Configurações', url: '/configuracoes', icon: Settings },
 ];
 
