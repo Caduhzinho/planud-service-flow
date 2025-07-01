@@ -1,6 +1,8 @@
 
 import { Settings as SettingsIcon } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SettingsManager } from '@/components/settings/SettingsManager';
+import { PlansManager } from '@/components/plans/PlansManager';
 
 export const Settings = () => {
   return (
@@ -17,7 +19,20 @@ export const Settings = () => {
         </div>
       </div>
 
-      <SettingsManager />
+      <Tabs defaultValue="geral" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="geral">Configurações Gerais</TabsTrigger>
+          <TabsTrigger value="planos">Planos e Assinatura</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="geral">
+          <SettingsManager />
+        </TabsContent>
+        
+        <TabsContent value="planos">
+          <PlansManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

@@ -63,6 +63,63 @@ export type Database = {
           },
         ]
       }
+      assinaturas: {
+        Row: {
+          ativa: boolean | null
+          criada_em: string | null
+          empresa_id: string | null
+          forma_pagamento: string | null
+          id: string
+          id_asaas: string | null
+          link_pagamento: string | null
+          plano_id: string | null
+          status: string | null
+          updated_at: string | null
+          vencimento: string | null
+        }
+        Insert: {
+          ativa?: boolean | null
+          criada_em?: string | null
+          empresa_id?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          id_asaas?: string | null
+          link_pagamento?: string | null
+          plano_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vencimento?: string | null
+        }
+        Update: {
+          ativa?: boolean | null
+          criada_em?: string | null
+          empresa_id?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          id_asaas?: string | null
+          link_pagamento?: string | null
+          plano_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vencimento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assinaturas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assinaturas_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "planos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           created_at: string
@@ -164,6 +221,7 @@ export type Database = {
           logo_url: string | null
           nome: string
           plano: string
+          plano_id: string | null
           ramo: string
         }
         Insert: {
@@ -172,6 +230,7 @@ export type Database = {
           logo_url?: string | null
           nome: string
           plano: string
+          plano_id?: string | null
           ramo: string
         }
         Update: {
@@ -180,9 +239,18 @@ export type Database = {
           logo_url?: string | null
           nome?: string
           plano?: string
+          plano_id?: string | null
           ramo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "empresas_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "planos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       financeiro: {
         Row: {
@@ -313,6 +381,45 @@ export type Database = {
           },
         ]
       }
+      planos: {
+        Row: {
+          criado_em: string | null
+          descricao: string | null
+          id: string
+          limite_agendamentos: number | null
+          limite_notas: number | null
+          nome: string
+          permite_ia: boolean | null
+          permite_logo: boolean | null
+          preco_mensal: number | null
+          suporte_whatsapp: boolean | null
+        }
+        Insert: {
+          criado_em?: string | null
+          descricao?: string | null
+          id?: string
+          limite_agendamentos?: number | null
+          limite_notas?: number | null
+          nome: string
+          permite_ia?: boolean | null
+          permite_logo?: boolean | null
+          preco_mensal?: number | null
+          suporte_whatsapp?: boolean | null
+        }
+        Update: {
+          criado_em?: string | null
+          descricao?: string | null
+          id?: string
+          limite_agendamentos?: number | null
+          limite_notas?: number | null
+          nome?: string
+          permite_ia?: boolean | null
+          permite_logo?: boolean | null
+          preco_mensal?: number | null
+          suporte_whatsapp?: boolean | null
+        }
+        Relationships: []
+      }
       usuarios: {
         Row: {
           created_at: string
@@ -356,6 +463,10 @@ export type Database = {
       get_user_empresa_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      verificar_limite_plano: {
+        Args: { empresa_id_param: string; tipo_limite: string }
+        Returns: boolean
       }
     }
     Enums: {
