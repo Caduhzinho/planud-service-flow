@@ -12,18 +12,9 @@ import { Building2, Upload, Settings, Bell, Smartphone, Palette, Zap } from 'luc
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Tables } from '@/integrations/supabase/types';
 
-interface Configuracao {
-  id: string;
-  empresa_id: string;
-  logo_url?: string;
-  plano_ativo: 'basico' | 'intermediario' | 'pro';
-  gerar_nota_automatica: boolean;
-  enviar_whatsapp_automatico: boolean;
-  notificacoes_email: boolean;
-  notificacoes_push: boolean;
-  tema_visual: 'claro' | 'escuro';
-}
+type Configuracao = Tables<'configuracoes'>;
 
 export const SettingsManager = () => {
   const { userData } = useAuth();
@@ -169,7 +160,7 @@ export const SettingsManager = () => {
           <div className="flex items-center space-x-6">
             <div>
               <Avatar className="h-20 w-20">
-                <AvatarImage src={configuracao?.logo_url} />
+                <AvatarImage src={configuracao?.logo_url || ''} />
                 <AvatarFallback className="text-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white">
                   {empresaNome.charAt(0)}
                 </AvatarFallback>
