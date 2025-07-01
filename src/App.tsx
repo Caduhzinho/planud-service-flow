@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { AuthProvider } from '@/hooks/useAuth';
 
 // Pages
 import Index from '@/pages/Index';
@@ -19,43 +20,45 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/agendamentos" element={
-            <ProtectedRoute>
-              <AppointmentsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/clientes" element={
-            <ProtectedRoute>
-              <ClientsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/financeiro" element={
-            <ProtectedRoute>
-              <FinancialPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/notas-fiscais" element={
-            <ProtectedRoute>
-              <InvoicesPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/configuracoes" element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Router>
-      <Toaster />
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/agendamentos" element={
+              <ProtectedRoute>
+                <AppointmentsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/clientes" element={
+              <ProtectedRoute>
+                <ClientsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/financeiro" element={
+              <ProtectedRoute>
+                <FinancialPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/notas-fiscais" element={
+              <ProtectedRoute>
+                <InvoicesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/configuracoes" element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Router>
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

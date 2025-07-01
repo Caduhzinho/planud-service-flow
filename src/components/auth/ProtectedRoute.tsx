@@ -2,6 +2,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import { ReactNode } from 'react';
+import { AuthWrapper } from './AuthWrapper';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -12,7 +13,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-lg">Carregando...</div>
       </div>
     );
@@ -22,5 +23,9 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/" replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <AuthWrapper>
+      {children}
+    </AuthWrapper>
+  );
 };
