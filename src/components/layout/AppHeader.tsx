@@ -23,14 +23,27 @@ export const AppHeader = () => {
 
   const getPlanoColor = (plano: string) => {
     switch (plano) {
-      case 'Pro':
+      case 'pro':
         return 'bg-purple-100 text-purple-800';
-      case 'Intermediário':
+      case 'intermediario':
         return 'bg-blue-100 text-blue-800';
-      case 'Básico':
+      case 'basico':
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPlanoLabel = (plano: string) => {
+    switch (plano) {
+      case 'pro':
+        return 'Pro';
+      case 'intermediario':
+        return 'Intermediário';
+      case 'basico':
+        return 'Básico';
+      default:
+        return 'Básico';
     }
   };
 
@@ -51,7 +64,7 @@ export const AppHeader = () => {
       <div className="flex items-center space-x-4">
         {userData?.empresa && (
           <Badge className={`${getPlanoColor(userData.empresa.plano)} border-0`}>
-            {userData.empresa.plano}
+            {getPlanoLabel(userData.empresa.plano)}
           </Badge>
         )}
         

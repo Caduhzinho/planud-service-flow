@@ -107,6 +107,56 @@ export type Database = {
           },
         ]
       }
+      configuracoes: {
+        Row: {
+          criado_em: string | null
+          empresa_id: string | null
+          enviar_whatsapp_automatico: boolean | null
+          gerar_nota_automatica: boolean | null
+          id: string
+          logo_url: string | null
+          notificacoes_email: boolean | null
+          notificacoes_push: boolean | null
+          plano_ativo: string | null
+          tema_visual: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          criado_em?: string | null
+          empresa_id?: string | null
+          enviar_whatsapp_automatico?: boolean | null
+          gerar_nota_automatica?: boolean | null
+          id?: string
+          logo_url?: string | null
+          notificacoes_email?: boolean | null
+          notificacoes_push?: boolean | null
+          plano_ativo?: string | null
+          tema_visual?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          criado_em?: string | null
+          empresa_id?: string | null
+          enviar_whatsapp_automatico?: boolean | null
+          gerar_nota_automatica?: boolean | null
+          id?: string
+          logo_url?: string | null
+          notificacoes_email?: boolean | null
+          notificacoes_push?: boolean | null
+          plano_ativo?: string | null
+          tema_visual?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuracoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empresas: {
         Row: {
           created_at: string
