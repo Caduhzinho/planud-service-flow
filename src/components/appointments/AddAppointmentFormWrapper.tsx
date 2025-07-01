@@ -43,7 +43,7 @@ export const AddAppointmentFormWrapper = ({ onSuccess }: AddAppointmentFormWrapp
         <AddAppointmentForm 
           open={showForm}
           onOpenChange={setShowForm}
-          onSuccess={handleSuccess}
+          onAppointmentAdded={handleSuccess}
         />
       )}
 

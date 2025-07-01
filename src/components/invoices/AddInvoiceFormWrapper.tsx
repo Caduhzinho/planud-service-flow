@@ -43,7 +43,6 @@ export const AddInvoiceFormWrapper = ({ onSuccess }: AddInvoiceFormWrapperProps)
         <AddInvoiceForm 
           open={showForm}
           onOpenChange={setShowForm}
-          onSuccess={handleSuccess}
         />
       )}
 
