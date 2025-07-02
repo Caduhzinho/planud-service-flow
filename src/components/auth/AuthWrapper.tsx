@@ -1,8 +1,9 @@
 
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useAuthValidation } from '@/hooks/useAuthValidation';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { PrivacyModal } from '@/components/privacy/PrivacyModal';
 import { AlertCircle, Building, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -11,8 +12,16 @@ interface AuthWrapperProps {
 }
 
 export const AuthWrapper = ({ children }: AuthWrapperProps) => {
-  const { signOut } = useAuth();
+  const { signOut, userData } = useAuth();
   const validation = useAuthValidation();
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+
+  // Verificar se precisa mostrar modal de privacidade
+  useEffect(() => {
+    if (validation.isValid && userData?.empresa && !userData.empresa.aceita_privacidade) {
+      setShowPrivacyModal(true);
+    }
+  }, [validation.isValid, userData]);
 
   if (validation.isLoading) {
     return (
@@ -73,5 +82,13 @@ export const AuthWrapper = ({ children }: AuthWrapperProps) => {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <PrivacyModal 
+        open={showPrivacyModal} 
+        onClose={() => setShowPrivacyModal(false)} 
+      />
+    </>
+  );
 };

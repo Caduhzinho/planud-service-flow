@@ -216,7 +216,12 @@ export type Database = {
       }
       empresas: {
         Row: {
+          aceita_privacidade: boolean | null
+          cidade: string | null
+          cnpj: string | null
           created_at: string
+          data_aceite_privacidade: string | null
+          endereco: string | null
           id: string
           logo_url: string | null
           nome: string
@@ -225,7 +230,12 @@ export type Database = {
           ramo: string
         }
         Insert: {
+          aceita_privacidade?: boolean | null
+          cidade?: string | null
+          cnpj?: string | null
           created_at?: string
+          data_aceite_privacidade?: string | null
+          endereco?: string | null
           id?: string
           logo_url?: string | null
           nome: string
@@ -234,7 +244,12 @@ export type Database = {
           ramo: string
         }
         Update: {
+          aceita_privacidade?: boolean | null
+          cidade?: string | null
+          cnpj?: string | null
           created_at?: string
+          data_aceite_privacidade?: string | null
+          endereco?: string | null
           id?: string
           logo_url?: string | null
           nome?: string
@@ -463,6 +478,10 @@ export type Database = {
       get_user_empresa_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      validar_cnpj: {
+        Args: { cnpj_input: string }
+        Returns: boolean
       }
       verificar_limite_plano: {
         Args: { empresa_id_param: string; tipo_limite: string }

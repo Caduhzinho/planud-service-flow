@@ -13,6 +13,8 @@ import ClientsPage from '@/pages/ClientsPage';
 import FinancialPage from '@/pages/FinancialPage';
 import InvoicesPage from '@/pages/InvoicesPage';
 import SettingsPage from '@/pages/SettingsPage';
+import PrivacyPage from '@/pages/PrivacyPage';
+import TermsPage from '@/pages/TermsPage';
 import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -54,6 +56,8 @@ function App() {
                 <SettingsPage />
               </ProtectedRoute>
             } />
+            <Route path="/privacidade" element={<PrivacyPage />} />
+            <Route path="/termos" element={<TermsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>
