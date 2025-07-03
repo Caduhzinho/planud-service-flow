@@ -182,7 +182,10 @@ export const PrivacyModal = ({ open, onClose }: PrivacyModalProps) => {
 
         <div className="flex justify-end space-x-3 pt-4 border-t">
           <Button
-            onClick={handleAccept}
+            onClick={() => {
+              console.log('Botão clicado!');
+              handleAccept();
+            }}
             disabled={!acceptPrivacy || !acceptTerms || isLoading}
             className="px-8"
           >
