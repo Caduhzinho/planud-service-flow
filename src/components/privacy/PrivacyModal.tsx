@@ -20,7 +20,13 @@ export const PrivacyModal = ({ open, onClose }: PrivacyModalProps) => {
   const { userData, setUserData } = useAuth();
 
   const handleAccept = async () => {
+    console.log('handleAccept chamado');
+    console.log('acceptPrivacy:', acceptPrivacy);
+    console.log('acceptTerms:', acceptTerms);
+    console.log('userData:', userData);
+
     if (!acceptPrivacy || !acceptTerms) {
+      console.log('Faltando aceite dos termos');
       toast({
         title: "Aceite necessário",
         description: "Você deve aceitar ambos os termos para continuar",
