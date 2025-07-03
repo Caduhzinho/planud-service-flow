@@ -37,7 +37,7 @@ export const PrivacyModal = ({ open, onClose }: PrivacyModalProps) => {
           aceita_privacidade: true,
           data_aceite_privacidade: new Date().toISOString()
         })
-        .eq('id', userData?.empresa_id);
+        .eq('id', userData?.empresa?.id);
 
       if (error) throw error;
 
