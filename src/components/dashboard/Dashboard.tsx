@@ -3,6 +3,7 @@ import { DashboardStats } from './DashboardStats';
 import { RevenueChart } from './RevenueChart';
 import { UpcomingAppointments } from './UpcomingAppointments';
 import { QuickActions } from './QuickActions';
+import { AIInsights } from './AIInsights';
 import { useAuth } from '@/hooks/useAuth';
 
 export const Dashboard = () => {
@@ -30,7 +31,10 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      <UpcomingAppointments />
+      <div className="grid lg:grid-cols-2 gap-8">
+        <UpcomingAppointments />
+        <AIInsights />
+      </div>
     </div>
   );
 };

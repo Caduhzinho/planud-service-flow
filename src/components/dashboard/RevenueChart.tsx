@@ -1,17 +1,42 @@
 
 import { Card } from '@/components/ui/card';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useRevenueChart } from '@/hooks/useRevenueChart';
 
 export const RevenueChart = () => {
-  const data = [
-    { name: 'Jan', receita: 4000, despesa: 2400 },
-    { name: 'Fev', receita: 3000, despesa: 1398 },
-    { name: 'Mar', receita: 5000, despesa: 2000 },
-    { name: 'Abr', receita: 2780, despesa: 3908 },
-    { name: 'Mai', receita: 1890, despesa: 4800 },
-    { name: 'Jun', receita: 2390, despesa: 3800 },
-    { name: 'Jul', receita: 7490, despesa: 4300 },
-  ];
+  const { data, isLoading, error } = useRevenueChart();
+
+  if (isLoading) {
+    return (
+      <Card className="p-6 rounded-2xl border-0 shadow-md">
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            Receita vs Despesa
+          </h3>
+          <p className="text-gray-600">
+            Últimos 6 meses
+          </p>
+        </div>
+        <div className="h-80 flex items-center justify-center">
+          <LoadingSpinner size="lg" />
+        </div>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-6 rounded-2xl border-0 shadow-md">
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            Receita vs Despesa
+          </h3>
+          <p className="text-red-600">{error}</p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 rounded-2xl border-0 shadow-md">
@@ -20,7 +45,7 @@ export const RevenueChart = () => {
           Receita vs Despesa
         </h3>
         <p className="text-gray-600">
-          Últimos 7 meses
+          Últimos 6 meses
         </p>
       </div>
       
@@ -36,10 +61,17 @@ export const RevenueChart = () => {
             <YAxis 
               stroke="#64748b"
               fontSize={12}
-              tickFormatter={(value) => `R$${value}`}
+              tickFormatter={(value) => new Intl.NumberFormat('pt-BR', { 
+                style: 'currency', 
+                currency: 'BRL',
+                notation: 'compact'
+              }).format(value)}
             />
             <Tooltip 
-              formatter={(value: number) => [`R$${value}`, '']}
+              formatter={(value: number) => [
+                new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value), 
+                ''
+              ]}
               contentStyle={{
                 backgroundColor: 'white',
                 border: 'none',

@@ -1,34 +1,59 @@
 
 import { Card } from '@/components/ui/card';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Users, Calendar, DollarSign, FileText } from 'lucide-react';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 export const DashboardStats = () => {
+  const { clientesAtivos, agendamentosHoje, notasEmitidas, receitaMensal, isLoading, error } = useDashboardStats();
+
+  if (isLoading) {
+    return (
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Card key={index} className="p-6 rounded-2xl border-0 shadow-md">
+            <LoadingSpinner size="sm" />
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="p-6 rounded-2xl border-0 shadow-md col-span-full">
+          <p className="text-red-600">{error}</p>
+        </Card>
+      </div>
+    );
+  }
+
   const stats = [
     {
       title: 'Clientes Ativos',
-      value: '47',
-      change: '+12%',
+      value: clientesAtivos.toString(),
       icon: Users,
       color: 'blue'
     },
     {
-      title: 'Agendamentos',
-      value: '23',
-      change: '+8%',
+      title: 'Agendamentos Hoje',
+      value: agendamentosHoje.toString(),
       icon: Calendar,
       color: 'green'
     },
     {
       title: 'Receita (Mês)',
-      value: 'R$ 12.450',
-      change: '+23%',
+      value: new Intl.NumberFormat('pt-BR', { 
+        style: 'currency', 
+        currency: 'BRL' 
+      }).format(receitaMensal),
       icon: DollarSign,
       color: 'purple'
     },
     {
       title: 'Notas Emitidas',
-      value: '31',
-      change: '+15%',
+      value: notasEmitidas.toString(),
       icon: FileText,
       color: 'orange'
     }
@@ -52,9 +77,6 @@ export const DashboardStats = () => {
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getColorClasses(stat.color)}`}>
               <stat.icon className="h-6 w-6" />
             </div>
-            <span className="text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded-lg">
-              {stat.change}
-            </span>
           </div>
           <div>
             <p className="text-2xl font-bold text-gray-900 mb-1">
