@@ -18,7 +18,8 @@ export const AuthWrapper = ({ children }: AuthWrapperProps) => {
 
   // Verificar se precisa mostrar modal de privacidade
   useEffect(() => {
-    if (validation.isValid && userData?.empresa && !userData.empresa.aceita_privacidade) {
+    if (validation.isValid && userData && 
+        (!userData.aceitou_termos || !userData.aceitou_privacidade)) {
       setShowPrivacyModal(true);
     }
   }, [validation.isValid, userData]);

@@ -6,6 +6,7 @@ import { Shield, FileText, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 interface PrivacyModalProps {
   open: boolean;
@@ -18,6 +19,7 @@ export const PrivacyModal = ({ open, onClose }: PrivacyModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { userData, setUserData } = useAuth();
+  const navigate = useNavigate();
 
   const handleAccept = async () => {
     console.log('handleAccept chamado');
@@ -35,9 +37,38 @@ export const PrivacyModal = ({ open, onClose }: PrivacyModalProps) => {
       return;
     }
 
+    if (!userData?.id) {
+      console.error('ID do usuário não encontrado');
+      toast({
+        title: "Erro",
+        description: "Dados do usuário não encontrados",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      console.log('Atualizando usuário:', userData.id);
+      
+      // Atualizar aceite na tabela usuarios
+      const { error: userError } = await supabase
+        .from('usuarios')
+        .update({
+          aceitou_termos: true,
+          aceitou_privacidade: true,
+          data_aceite_termos: new Date().toISOString(),
+          data_aceite_privacidade: new Date().toISOString()
+        })
+        .eq('id', userData.id);
+
+      if (userError) {
+        console.error('Erro ao atualizar usuário:', userError);
+        throw userError;
+      }
+
+      // Atualizar aceite na tabela empresas
+      const { error: empresaError } = await supabase
         .from('empresas')
         .update({
           aceita_privacidade: true,
@@ -45,26 +76,38 @@ export const PrivacyModal = ({ open, onClose }: PrivacyModalProps) => {
         })
         .eq('id', userData?.empresa?.id);
 
-      if (error) throw error;
-
-      // Atualizar estado local
-      if (userData?.empresa) {
-        setUserData({
-          ...userData,
-          empresa: {
-            ...userData.empresa,
-            aceita_privacidade: true,
-            data_aceite_privacidade: new Date().toISOString()
-          }
-        });
+      if (empresaError) {
+        console.error('Erro ao atualizar empresa:', empresaError);
+        throw empresaError;
       }
 
+      // Atualizar estado local
+      setUserData({
+        ...userData,
+        aceitou_termos: true,
+        aceitou_privacidade: true,
+        data_aceite_termos: new Date().toISOString(),
+        data_aceite_privacidade: new Date().toISOString(),
+        empresa: {
+          ...userData.empresa,
+          aceita_privacidade: true,
+          data_aceite_privacidade: new Date().toISOString()
+        }
+      });
+
+      console.log('Aceite registrado com sucesso, fechando modal');
+      
       toast({
         title: "Termos aceitos",
-        description: "Obrigado por aceitar nossos termos. Bem-vindo ao Planud!",
+        description: "Bem-vindo ao Planud! Comece cadastrando seus clientes e agendamentos.",
       });
 
       onClose();
+      
+      // Redirecionar para o dashboard
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
     } catch (error) {
       console.error('Erro ao aceitar termos:', error);
       toast({

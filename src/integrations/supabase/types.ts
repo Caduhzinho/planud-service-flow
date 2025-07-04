@@ -437,7 +437,11 @@ export type Database = {
       }
       usuarios: {
         Row: {
+          aceitou_privacidade: boolean | null
+          aceitou_termos: boolean | null
           created_at: string
+          data_aceite_privacidade: string | null
+          data_aceite_termos: string | null
           email: string
           empresa_id: string
           id: string
@@ -445,7 +449,11 @@ export type Database = {
           tipo: string
         }
         Insert: {
+          aceitou_privacidade?: boolean | null
+          aceitou_termos?: boolean | null
           created_at?: string
+          data_aceite_privacidade?: string | null
+          data_aceite_termos?: string | null
           email: string
           empresa_id: string
           id: string
@@ -453,7 +461,11 @@ export type Database = {
           tipo?: string
         }
         Update: {
+          aceitou_privacidade?: boolean | null
+          aceitou_termos?: boolean | null
           created_at?: string
+          data_aceite_privacidade?: string | null
+          data_aceite_termos?: string | null
           email?: string
           empresa_id?: string
           id?: string
