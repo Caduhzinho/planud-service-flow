@@ -228,6 +228,7 @@ export type Database = {
           plano: string
           plano_id: string | null
           ramo: string
+          updated_at: string
         }
         Insert: {
           aceita_privacidade?: boolean | null
@@ -242,6 +243,7 @@ export type Database = {
           plano: string
           plano_id?: string | null
           ramo: string
+          updated_at?: string
         }
         Update: {
           aceita_privacidade?: boolean | null
@@ -256,6 +258,7 @@ export type Database = {
           plano?: string
           plano_id?: string | null
           ramo?: string
+          updated_at?: string
         }
         Relationships: [
           {
