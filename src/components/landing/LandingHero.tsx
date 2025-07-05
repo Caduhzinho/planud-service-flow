@@ -22,95 +22,94 @@ export const LandingHero = ({ onLogin, onRegister }: LandingHeroProps = {}) => {
   const features = [
     {
       icon: Calendar,
-      title: "Agendamentos Inteligentes",
-      description: "IA organiza sua agenda automaticamente, evita conflitos e otimiza seu tempo"
+      title: "Agendamentos Organizados",
+      description: "Sistema completo para cadastrar clientes, agendar serviços e controlar horários"
     },
     {
       icon: FileText,
-      title: "Notas Fiscais Automáticas", 
-      description: "NFS-e gerada automaticamente com validação de CNPJ e envio por email"
+      title: "Cobrança Automática", 
+      description: "Envie cobranças por PIX, boleto e cartão via Asaas - o dinheiro vai direto para sua conta"
     },
     {
       icon: Zap,
-      title: "Assistente Virtual com IA",
-      description: "Chatbot inteligente responde clientes 24/7 e agenda serviços automaticamente"
+      title: "Controle Financeiro",
+      description: "Acompanhe receitas, despesas e status de pagamentos em tempo real"
     },
     {
       icon: Users,
-      title: "Atendimento WhatsApp",
-      description: "Integração completa com WhatsApp para comunicação automática com clientes"
+      title: "Multiempresa",
+      description: "Cada empresa tem seus dados separados e seguros, com controle total de acesso"
     }
   ];
 
   const plans = [
     {
-      name: "Básico",
+      name: "Gratuito",
       price: "Grátis",
-      description: "Ideal para começar",
+      description: "Ideal para testar",
       features: [
-        "Até 10 agendamentos/mês",
-        "1 usuário", 
-        "Suporte por email",
-        "Dashboard básico"
+        "1 prestador",
+        "10 agendamentos/mês",
+        "Painel básico",
+        "Suporte por email"
       ],
       highlighted: false,
       buttonText: "Começar Grátis"
     },
     {
-      name: "Intermediário",
+      name: "Profissional",
       price: "R$ 49,90",
-      description: "Para pequenas empresas",
+      description: "Para automação real",
       features: [
-        "Até 100 agendamentos/mês",
-        "Notas fiscais automáticas",
-        "IA básica",
+        "Até 5 prestadores",
+        "Agendamento e cobrança automáticos",
+        "Fluxos personalizados",
+        "Relatórios e painel completo",
+        "Integração com Asaas"
+      ],
+      highlighted: true,
+      buttonText: "Assinar Profissional"
+    },
+    {
+      name: "Avançado", 
+      price: "R$ 99,90",
+      description: "Para equipes maiores",
+      features: [
+        "Até 15 prestadores",
+        "Assistente automatizado por WhatsApp",
+        "Integrações completas",
         "Suporte prioritário",
         "Relatórios avançados"
       ],
-      highlighted: true,
-      buttonText: "Assinar Agora"
-    },
-    {
-      name: "Pro", 
-      price: "R$ 99,90",
-      description: "Para empresas em crescimento",
-      features: [
-        "Agendamentos ilimitados",
-        "IA avançada",
-        "WhatsApp integrado",
-        "Múltiplos usuários", 
-        "Suporte VIP",
-        "Integração completa"
-      ],
       highlighted: false,
-      buttonText: "Assinar Pro"
+      buttonText: "Assinar Avançado"
     }
   ];
 
   const integrations = [
-    { name: "Supabase", description: "Backend seguro e escalável" },
-    { name: "ASAAS", description: "Pagamentos e cobranças" },
-    { name: "WhatsApp", description: "Comunicação direta" },
-    { name: "OpenAI", description: "Inteligência artificial" }
+    { name: "Asaas", description: "Pagamentos automáticos" },
+    { name: "n8n", description: "Fluxos de automação" },
+    { name: "WhatsApp", description: "Comunicação (futuro)" },
+    { name: "Supabase", description: "Banco de dados seguro" }
   ];
 
   const testimonials = [
     {
       name: "Maria Silva",
       business: "Clínica de Estética", 
-      text: "O Planud revolucionou minha clínica. A IA agenda sozinha e nunca mais tive conflitos de horário!",
+      text: "O Planud organizou minha agenda e automatizou as cobranças. Agora recebo direto na conta via Asaas!",
       avatar: "MS"
     },
     {
       name: "João Santos",
       business: "Oficina Mecânica",
-      text: "As notas fiscais automáticas economizaram horas do meu dia. Sistema incrível!",
+      text: "Sistema prático e funcional. Controlo agendamentos e financeiro em um lugar só.",
       avatar: "JS"
     },
     {
       name: "Ana Costa",
       business: "Salão de Beleza",
-      text: "Meus clientes adoram o atendimento automático no WhatsApp. Conversões aumentaram 40%!",
+      text: "Painel simples, dados seguros e cobranças automáticas. Exatamente o que precisava!",
       avatar: "AC"
     }
   ];
@@ -219,17 +218,17 @@ export const LandingHero = ({ onLogin, onRegister }: LandingHeroProps = {}) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center animate-fade-in">
             <Badge className="mb-6 bg-gradient-to-r from-primary/10 to-secondary/10 text-primary border-primary/20">
-              🚀 Automatize sua empresa com IA
+              🎯 Sistema completo para empresas de serviços
             </Badge>
             
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-secondary bg-clip-text text-transparent leading-tight">
               Automatize sua empresa<br />
-              de serviços com IA
+              de serviços com tecnologia inteligente
             </h1>
             
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-              Do agendamento ao pagamento. Com IA, você controla tudo com um clique.
-              Aumente sua produtividade e nunca mais perca um cliente.
+              Transforme atendimentos, agendamentos e cobranças em processos automáticos.
+              Com integração ao Asaas, o dinheiro vai direto para sua conta.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -255,20 +254,20 @@ export const LandingHero = ({ onLogin, onRegister }: LandingHeroProps = {}) => {
               <div className="relative bg-card border border-border/50 rounded-2xl p-8 shadow-2xl">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
                   <div>
-                    <div className="text-2xl md:text-3xl font-bold text-primary mb-2">1000+</div>
-                    <div className="text-sm text-muted-foreground">Empresas ativas</div>
+                    <div className="text-2xl md:text-3xl font-bold text-primary mb-2">200+</div>
+                    <div className="text-sm text-muted-foreground">Empresas usando</div>
                   </div>
                   <div>
-                    <div className="text-2xl md:text-3xl font-bold text-primary mb-2">50k+</div>
+                    <div className="text-2xl md:text-3xl font-bold text-primary mb-2">5k+</div>
                     <div className="text-sm text-muted-foreground">Agendamentos</div>
                   </div>
                   <div>
-                    <div className="text-2xl md:text-3xl font-bold text-primary mb-2">98%</div>
+                    <div className="text-2xl md:text-3xl font-bold text-primary mb-2">95%</div>
                     <div className="text-sm text-muted-foreground">Satisfação</div>
                   </div>
                   <div>
                     <div className="text-2xl md:text-3xl font-bold text-primary mb-2">24/7</div>
-                    <div className="text-sm text-muted-foreground">Suporte IA</div>
+                    <div className="text-sm text-muted-foreground">Sistema online</div>
                   </div>
                 </div>
               </div>
@@ -282,10 +281,10 @@ export const LandingHero = ({ onLogin, onRegister }: LandingHeroProps = {}) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Funcionalidades que revolucionam seu negócio
+              Funcionalidades práticas para seu negócio
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Tecnologia de ponta para automatizar processos e aumentar sua produtividade
+              Sistema completo para gestão de agendamentos, cobrança e controle financeiro
             </p>
           </div>
 
@@ -472,7 +471,7 @@ export const LandingHero = ({ onLogin, onRegister }: LandingHeroProps = {}) => {
                 </span>
               </div>
               <p className="text-muted-foreground mb-4 max-w-md">
-                A plataforma completa para automatizar sua empresa de serviços com inteligência artificial.
+                Sistema completo para empresas de serviços: agendamentos, cobrança via Asaas e controle financeiro.
               </p>
               <p className="text-sm text-muted-foreground">
                 © 2025 Planud - Todos os direitos reservados
