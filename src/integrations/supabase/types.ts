@@ -447,6 +447,7 @@ export type Database = {
           id: string
           nome: string
           tipo: string
+          updated_at: string
         }
         Insert: {
           aceitou_privacidade?: boolean | null
@@ -459,6 +460,7 @@ export type Database = {
           id: string
           nome: string
           tipo?: string
+          updated_at?: string
         }
         Update: {
           aceitou_privacidade?: boolean | null
@@ -471,6 +473,7 @@ export type Database = {
           id?: string
           nome?: string
           tipo?: string
+          updated_at?: string
         }
         Relationships: [
           {
