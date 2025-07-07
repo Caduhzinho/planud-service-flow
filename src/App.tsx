@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AuthProvider } from '@/hooks/useAuth';
+import { ThemeProvider } from '@/hooks/useTheme';
 
 // Pages
 import Index from '@/pages/Index';
@@ -22,8 +23,9 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
+      <ThemeProvider>
+        <AuthProvider>
+          <Router>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={
@@ -60,9 +62,10 @@ function App() {
             <Route path="/termos" element={<TermsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </Router>
-        <Toaster />
-      </AuthProvider>
+          </Router>
+          <Toaster />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,21 +8,25 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Building2, Upload, Settings, Bell, Smartphone, Palette, Zap } from 'lucide-react';
+import { Building2, Upload, Settings, Bell, Smartphone, Palette, Zap, ImageIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
+import { useTheme } from '@/hooks/useTheme';
 
 type Configuracao = Tables<'configuracoes'>;
 
 export const SettingsManager = () => {
   const { userData } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [configuracao, setConfiguracao] = useState<Configuracao | null>(null);
   const [empresaNome, setEmpresaNome] = useState('');
   const [empresaRamo, setEmpresaRamo] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (userData?.empresa) {
@@ -47,6 +51,10 @@ export const SettingsManager = () => {
 
       if (data) {
         setConfiguracao(data);
+        // Sincronizar tema visual com o contexto
+        if (data.tema_visual) {
+          setTheme(data.tema_visual as 'claro' | 'escuro');
+        }
       } else {
         // Criar configuração padrão se não existir
         await createDefaultConfig();
@@ -116,10 +124,68 @@ export const SettingsManager = () => {
       if (error) throw error;
 
       setConfiguracao(prev => prev ? { ...prev, [campo]: valor } : null);
+      
+      // Sincronizar tema visual com o contexto
+      if (campo === 'tema_visual') {
+        setTheme(valor);
+      }
+      
       toast.success('Configuração atualizada!');
     } catch (error) {
       console.error('Erro ao atualizar configuração:', error);
       toast.error('Erro ao atualizar configuração');
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !userData?.id) return;
+
+    // Validar tipo e tamanho do arquivo
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Formato não suportado. Use PNG, JPEG ou SVG.');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Máximo 2MB.');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    try {
+      // Upload para o storage
+      const fileName = `${userData.id}/logo.${file.type.split('/')[1]}`;
+      const { error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(fileName);
+
+      // Atualizar configuração com nova URL
+      await updateConfiguracao('logo_url', publicUrl);
+      
+      // Também atualizar logo_url na tabela empresas para compatibilidade
+      await supabase
+        .from('empresas')
+        .update({ logo_url: publicUrl })
+        .eq('id', userData.empresa?.id);
+
+      toast.success('Logo atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao fazer upload do logo:', error);
+      toast.error('Erro ao fazer upload do logo');
+    } finally {
+      setIsUploadingLogo(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -209,22 +275,30 @@ export const SettingsManager = () => {
 
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
+              <ImageIcon className="h-4 w-4" />
               Logo da Empresa
             </Label>
             <div className="flex items-center gap-4">
               <Input
+                ref={fileInputRef}
                 type="file"
-                accept="image/png,image/svg+xml,image/jpeg"
+                accept="image/png,image/jpeg,image/svg+xml"
+                onChange={handleLogoUpload}
                 className="flex-1"
-                disabled
+                disabled={isUploadingLogo}
               />
-              <Button variant="outline" disabled>
-                Upload (Em breve)
+              <Button 
+                variant="outline" 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingLogo}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {isUploadingLogo ? 'Enviando...' : 'Selecionar Logo'}
               </Button>
             </div>
             <p className="text-sm text-gray-500">
-              A logo será exibida nas notas fiscais e no cabeçalho do sistema
+              A logo será exibida nas notas de serviço e no cabeçalho do sistema. Formatos aceitos: PNG, JPEG, SVG (máx. 2MB)
             </p>
           </div>
         </CardContent>
