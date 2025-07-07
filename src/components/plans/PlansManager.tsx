@@ -1,17 +1,14 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, X, Crown, Zap, Users } from 'lucide-react';
+import { Check, X, Crown, Zap, Users, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
 
 type Plano = Tables<'planos'>;
-type Assinatura = Tables<'assinaturas'>;
 
 interface PlanUsage {
   agendamentos_usado: number;
@@ -20,21 +17,40 @@ interface PlanUsage {
   notas_limite: number;
 }
 
+interface SubscriptionInfo {
+  subscribed: boolean;
+  subscription_tier?: string;
+  subscription_end?: string;
+}
+
+const STRIPE_PRICES = {
+  'gratuito': '', // Free plan, no price ID needed
+  'intermediario': 'price_1QdJCDRMO6njjwBTtPATf8YfR5rDPCNhzTF9Ez6JMLpWBe4eQubc4mwKNmPbmXqQ2Iu1mAueKeGLupGMDm74eIAf00wlngEL3O', // Replace with actual price ID for R$ 29,90
+  'pro': 'price_2QdJCDRMO6njjwBTtPATf8YfR5rDPCNhzTF9Ez6JMLpWBe4eQubc4mwKNmPbmXqQ2Iu1mAueKeGLupGMDm74eIAf00wlngEL3O' // Replace with actual price ID for R$ 59,90
+};
+
 export const PlansManager = () => {
   const { userData } = useAuth();
   const [planos, setPlanos] = useState<Plano[]>([]);
-  const [assinaturaAtual, setAssinaturaAtual] = useState<Assinatura | null>(null);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo>({ subscribed: false });
   const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingSubscription, setIsCreatingSubscription] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (userData?.empresa?.id) {
-      loadPlanos();
-      loadAssinaturaAtual();
-      loadPlanUsage();
+      loadData();
     }
   }, [userData]);
+
+  const loadData = async () => {
+    await Promise.all([
+      loadPlanos(),
+      checkSubscription(),
+      loadPlanUsage()
+    ]);
+  };
 
   const loadPlanos = async () => {
     try {
@@ -51,29 +67,23 @@ export const PlansManager = () => {
     }
   };
 
-  const loadAssinaturaAtual = async () => {
+  const checkSubscription = async () => {
     try {
-      const { data, error } = await supabase
-        .from('assinaturas')
-        .select('*, planos(*)')
-        .eq('empresa_id', userData?.empresa?.id)
-        .eq('ativa', true)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Erro ao carregar assinatura:', error);
-        return;
-      }
-
-      setAssinaturaAtual(data);
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      
+      if (error) throw error;
+      
+      setSubscriptionInfo(data || { subscribed: false });
     } catch (error) {
-      console.error('Erro ao carregar assinatura:', error);
+      console.error('Erro ao verificar assinatura:', error);
+      setSubscriptionInfo({ subscribed: false });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const loadPlanUsage = async () => {
     try {
-      // Buscar uso atual do mês
       const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
 
@@ -91,7 +101,6 @@ export const PlansManager = () => {
         .gte('criada_em', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
         .lt('criada_em', `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-01`);
 
-      // Buscar limites do plano atual
       const { data: empresa } = await supabase
         .from('empresas')
         .select('planos(limite_agendamentos, limite_notas)')
@@ -106,35 +115,66 @@ export const PlansManager = () => {
       });
     } catch (error) {
       console.error('Erro ao carregar uso do plano:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const createSubscription = async (planoId: string, formaPagamento: string) => {
+  const createStripeCheckout = async (plano: Plano) => {
+    if (plano.nome === 'gratuito') return;
+    
     setIsCreatingSubscription(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-asaas-subscription', {
+      const priceId = STRIPE_PRICES[plano.nome as keyof typeof STRIPE_PRICES];
+      
+      if (!priceId) {
+        toast.error('Price ID não configurado para este plano');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
         body: {
-          empresa_id: userData?.empresa?.id,
-          plano_id: planoId,
-          forma_pagamento: formaPagamento,
+          priceId,
+          planName: plano.nome,
         },
       });
 
       if (error) throw error;
 
-      if (data.success) {
-        toast.success('Assinatura criada! Redirecionando para pagamento...');
-        window.open(data.link_pagamento, '_blank');
-        await loadAssinaturaAtual();
+      if (data.url) {
+        toast.success('Redirecionando para pagamento...');
+        window.open(data.url, '_blank');
       }
     } catch (error) {
-      console.error('Erro ao criar assinatura:', error);
-      toast.error('Erro ao criar assinatura');
+      console.error('Erro ao criar checkout:', error);
+      toast.error('Erro ao criar checkout do Stripe');
     } finally {
       setIsCreatingSubscription(false);
     }
+  };
+
+  const openCustomerPortal = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      
+      if (error) throw error;
+      
+      if (data.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Erro ao abrir portal:', error);
+      toast.error('Erro ao abrir portal do cliente');
+    }
+  };
+
+  const refreshSubscription = async () => {
+    setIsRefreshing(true);
+    await checkSubscription();
+    setIsRefreshing(false);
+    toast.success('Status da assinatura atualizado');
+  };
+
+  const isCurrentPlan = (planoNome: string) => {
+    return subscriptionInfo.subscription_tier === planoNome;
   };
 
   const getPlanoIcon = (nome: string) => {
@@ -173,7 +213,60 @@ export const PlansManager = () => {
 
   return (
     <div className="space-y-8">
-      {/* Uso Atual */}
+      {/* Subscription Status */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Status da Assinatura</CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={refreshSubscription}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <span className="font-medium">Status:</span>
+              <Badge className={`ml-2 ${
+                subscriptionInfo.subscribed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+              }`}>
+                {subscriptionInfo.subscribed ? 'Ativa' : 'Inativa'}
+              </Badge>
+            </div>
+            <div>
+              <span className="font-medium">Plano:</span>
+              <span className="ml-2 capitalize">
+                {subscriptionInfo.subscription_tier || 'Gratuito'}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium">Vencimento:</span>
+              <span className="ml-2">
+                {subscriptionInfo.subscription_end 
+                  ? new Date(subscriptionInfo.subscription_end).toLocaleDateString('pt-BR') 
+                  : '-'
+                }
+              </span>
+            </div>
+          </div>
+          
+          {subscriptionInfo.subscribed && (
+            <div className="mt-4">
+              <Button onClick={openCustomerPortal} variant="outline">
+                Gerenciar Assinatura
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Plan Usage */}
       {planUsage && (
         <Card>
           <CardHeader>
@@ -222,11 +315,11 @@ export const PlansManager = () => {
         </Card>
       )}
 
-      {/* Planos Disponíveis */}
+      {/* Available Plans */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {planos.map((plano) => (
           <Card key={plano.id} className={`relative ${
-            assinaturaAtual?.plano_id === plano.id ? 'ring-2 ring-indigo-500' : ''
+            isCurrentPlan(plano.nome) ? 'ring-2 ring-indigo-500' : ''
           }`}>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -235,7 +328,7 @@ export const PlansManager = () => {
                   <CardTitle className="capitalize">{plano.nome}</CardTitle>
                 </div>
                 <Badge className={getPlanoColor(plano.nome)}>
-                  {assinaturaAtual?.plano_id === plano.id ? 'Atual' : ''}
+                  {isCurrentPlan(plano.nome) ? 'Atual' : ''}
                 </Badge>
               </div>
             </CardHeader>
@@ -274,73 +367,31 @@ export const PlansManager = () => {
                 </div>
               </div>
 
-              {assinaturaAtual?.plano_id !== plano.id && plano.nome !== 'gratuito' && (
-                <div className="space-y-2">
-                  <Select onValueChange={(value) => createSubscription(plano.id, value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Escolher forma de pagamento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pix">PIX</SelectItem>
-                      <SelectItem value="boleto">Boleto</SelectItem>
-                      <SelectItem value="cartao">Cartão</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              {!isCurrentPlan(plano.nome) && plano.nome !== 'gratuito' && (
+                <Button 
+                  onClick={() => createStripeCheckout(plano)}
+                  disabled={isCreatingSubscription}
+                  className="w-full"
+                >
+                  {isCreatingSubscription ? 'Criando...' : 'Assinar Plano'}
+                </Button>
               )}
 
-              {assinaturaAtual?.plano_id === plano.id && (
+              {isCurrentPlan(plano.nome) && (
                 <Badge className="w-full justify-center bg-green-100 text-green-800">
                   Plano Ativo
+                </Badge>
+              )}
+
+              {plano.nome === 'gratuito' && !isCurrentPlan(plano.nome) && (
+                <Badge className="w-full justify-center bg-gray-100 text-gray-800">
+                  Plano Gratuito
                 </Badge>
               )}
             </CardContent>
           </Card>
         ))}
       </div>
-
-      {/* Assinatura Atual */}
-      {assinaturaAtual && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Detalhes da Assinatura</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="font-medium">Status:</span>
-                <Badge className={`ml-2 ${
-                  assinaturaAtual.status === 'ativa' ? 'bg-green-100 text-green-800' : 
-                  assinaturaAtual.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {assinaturaAtual.status}
-                </Badge>
-              </div>
-              <div>
-                <span className="font-medium">Vencimento:</span>
-                <span className="ml-2">
-                  {assinaturaAtual.vencimento ? new Date(assinaturaAtual.vencimento).toLocaleDateString('pt-BR') : '-'}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium">Forma de Pagamento:</span>
-                <span className="ml-2 capitalize">{assinaturaAtual.forma_pagamento}</span>
-              </div>
-              {assinaturaAtual.link_pagamento && assinaturaAtual.status === 'pendente' && (
-                <div className="col-span-2">
-                  <Button 
-                    onClick={() => window.open(assinaturaAtual.link_pagamento!, '_blank')}
-                    className="w-full"
-                  >
-                    Pagar Assinatura
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
