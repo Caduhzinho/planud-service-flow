@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FileText, Send, Download, Eye, X, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { InvoiceDetailsModal } from './InvoiceDetailsModal';
+import { InvoiceReceipt } from './InvoiceReceipt';
 
 interface Invoice {
   id: string;
@@ -33,6 +34,7 @@ export const InvoicesManager = () => {
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [clientFilter, setClientFilter] = useState<string>('todos');
@@ -44,6 +46,17 @@ export const InvoicesManager = () => {
       fetchInvoices();
     }
   }, [userData?.empresa_id]);
+
+  useEffect(() => {
+    const handleInvoiceCreated = () => {
+      fetchInvoices();
+    };
+
+    window.addEventListener('invoiceCreated', handleInvoiceCreated);
+    return () => {
+      window.removeEventListener('invoiceCreated', handleInvoiceCreated);
+    };
+  }, []);
 
   useEffect(() => {
     applyFilters();
@@ -177,12 +190,9 @@ export const InvoicesManager = () => {
     }
   };
 
-  const handleDownloadPDF = async (invoiceId: string) => {
-    // Placeholder para download do PDF
-    toast({
-      title: "Download iniciado",
-      description: "Geração de PDF será implementada em breve",
-    });
+  const handleDownloadPDF = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setShowReceiptModal(true);
   };
 
   const getUniqueClients = () => {
@@ -391,8 +401,8 @@ export const InvoicesManager = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDownloadPDF(invoice.id)}
-                          title="Baixar PDF"
+                          onClick={() => handleDownloadPDF(invoice)}
+                          title="Ver/Baixar recibo"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
@@ -429,8 +439,16 @@ export const InvoicesManager = () => {
         open={showDetailsModal}
         onOpenChange={setShowDetailsModal}
         onSend={handleSendInvoice}
-        onDownload={handleDownloadPDF}
+        onDownload={() => selectedInvoice && handleDownloadPDF(selectedInvoice)}
       />
+
+      {selectedInvoice && (
+        <InvoiceReceipt
+          invoice={selectedInvoice}
+          open={showReceiptModal}
+          onOpenChange={setShowReceiptModal}
+        />
+      )}
     </div>
   );
 };

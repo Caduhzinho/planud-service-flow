@@ -38,7 +38,7 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
   const [selectedAppointment, setSelectedAppointment] = useState('');
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [formaPagamento, setFormaPagamento] = useState('manual');
+  const [formaPagamento, setFormaPagamento] = useState('pix');
   const [status, setStatus] = useState('gerado');
   const [isLoading, setIsLoading] = useState(false);
   const { userData } = useAuth();
@@ -130,10 +130,40 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedClient || !valor || !descricao) {
+    // Validação de campos obrigatórios
+    if (!selectedClient) {
       toast({
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios",
+        description: "Selecione um cliente",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!descricao.trim()) {
+      toast({
+        title: "Erro",
+        description: "Preencha a descrição do serviço",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const valorNumerico = parseFloat(valor);
+    if (!valor || isNaN(valorNumerico) || valorNumerico <= 0) {
+      toast({
+        title: "Erro",
+        description: "Informe um valor válido maior que zero",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Verificar se a empresa tem CNPJ cadastrado
+    if (!userData?.empresa?.cnpj) {
+      toast({
+        title: "Erro",
+        description: "Cadastre o CNPJ da sua empresa nas configurações antes de gerar notas fiscais",
         variant: "destructive",
       });
       return;
@@ -144,19 +174,21 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
     try {
       const codigoNf = await generateInvoiceNumber();
       
-      const { error } = await supabase
+      const { data: notaFiscal, error } = await supabase
         .from('notas_fiscais')
         .insert({
           empresa_id: userData?.empresa_id,
           cliente_id: selectedClient,
           agendamento_id: selectedAppointment || null,
-          valor: parseFloat(valor),
-          descricao,
+          valor: valorNumerico,
+          descricao: descricao.trim(),
           forma_pagamento: formaPagamento,
           status,
           codigo_nf: codigoNf,
           data_emissao: new Date().toISOString()
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
@@ -170,17 +202,18 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
       setSelectedAppointment('');
       setValor('');
       setDescricao('');
-      setFormaPagamento('manual');
+      setFormaPagamento('pix');
       setStatus('gerado');
       onOpenChange(false);
       
-      // Refresh the parent component
-      window.location.reload();
+      // Refresh the parent component without full page reload
+      window.dispatchEvent(new CustomEvent('invoiceCreated', { detail: notaFiscal }));
+      
     } catch (error) {
       console.error('Erro ao criar nota fiscal:', error);
       toast({
         title: "Erro",
-        description: "Erro ao criar nota fiscal",
+        description: "Erro ao criar nota fiscal. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -265,10 +298,10 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="manual">Manual</SelectItem>
                     <SelectItem value="pix">PIX</SelectItem>
-                    <SelectItem value="boleto">Boleto</SelectItem>
+                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
                     <SelectItem value="cartao">Cartão</SelectItem>
+                    <SelectItem value="boleto">Boleto</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -282,7 +315,7 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
                   <SelectContent>
                     <SelectItem value="gerado">Gerada</SelectItem>
                     <SelectItem value="pendente">Pendente</SelectItem>
-                    <SelectItem value="enviado">Enviada</SelectItem>
+                    <SelectItem value="cancelado">Cancelada</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
