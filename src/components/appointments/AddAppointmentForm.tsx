@@ -22,6 +22,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { useRateLimit } from '@/components/security/RateLimitProvider';
 
 interface Client {
   id: string;
@@ -39,6 +40,7 @@ export const AddAppointmentForm = ({ open, onOpenChange, onAppointmentAdded }: A
   const { userData } = useAuth();
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+  const { checkRateLimit } = useRateLimit();
   const [formData, setFormData] = useState({
     cliente_id: '',
     data: '',
@@ -75,6 +77,10 @@ export const AddAppointmentForm = ({ open, onOpenChange, onAppointmentAdded }: A
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!checkRateLimit('create')) {
+      return;
+    }
+
     if (!formData.cliente_id || !formData.data || !formData.hora || !formData.servico || !formData.valor) {
       toast.error('Todos os campos obrigatórios devem ser preenchidos');
       return;

@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useRateLimit } from '@/components/security/RateLimitProvider';
 
 interface Client {
   id: string;
@@ -43,6 +44,7 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { userData } = useAuth();
   const { toast } = useToast();
+  const { checkRateLimit } = useRateLimit();
 
   useEffect(() => {
     if (open && userData?.empresa_id) {
@@ -130,6 +132,10 @@ export const AddInvoiceForm = ({ open, onOpenChange }: AddInvoiceFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!checkRateLimit('create')) {
+      return;
+    }
+
     // Validação de campos obrigatórios
     if (!selectedClient) {
       toast({

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Download, Send } from 'lucide-react';
+import { Download, Send, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -69,38 +69,151 @@ export const InvoiceReceipt = ({ invoice, open, onOpenChange }: InvoiceReceiptPr
     const printContent = document.getElementById('invoice-content');
     if (!printContent) return;
 
-    const originalContents = document.body.innerHTML;
-    const printContents = printContent.innerHTML;
+    // Criar uma nova janela para impressão
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível abrir a janela de impressão. Verifique se o bloqueador de pop-ups está desabilitado.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    document.body.innerHTML = `
+    printWindow.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
-          <title>Nota de Serviço ${invoice.codigo_nf}</title>
+          <title>Nota de Serviço ${invoice.codigo_nf || 'N/A'}</title>
+          <meta charset="utf-8">
           <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-            .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-            .logo { max-width: 150px; max-height: 80px; margin-bottom: 10px; }
-            .company-info { margin-bottom: 20px; }
-            .invoice-details { margin: 20px 0; }
-            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-            .total { font-weight: bold; font-size: 18px; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: 'Arial', sans-serif; 
+              line-height: 1.6; 
+              color: #333;
+              background: white;
+            }
+            .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+            .header { 
+              text-align: center; 
+              border-bottom: 3px solid #4f46e5; 
+              padding-bottom: 20px; 
+              margin-bottom: 30px; 
+            }
+            .logo { 
+              max-width: 150px; 
+              max-height: 80px; 
+              margin-bottom: 15px;
+              object-fit: contain;
+            }
+            .company-title { 
+              font-size: 28px; 
+              font-weight: bold; 
+              color: #4f46e5; 
+              margin-bottom: 5px;
+            }
+            .invoice-number { 
+              font-size: 18px; 
+              color: #666; 
+              font-weight: 600;
+            }
+            .section { 
+              margin-bottom: 25px; 
+              background: #f8fafc;
+              padding: 15px;
+              border-radius: 8px;
+              border-left: 4px solid #4f46e5;
+            }
+            .section-title { 
+              font-size: 16px; 
+              font-weight: bold; 
+              color: #1e293b; 
+              margin-bottom: 10px;
+              display: flex;
+              align-items: center;
+            }
+            .section-content { 
+              background: white;
+              padding: 12px;
+              border-radius: 6px;
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin: 15px 0;
+              background: white;
+              border-radius: 8px;
+              overflow: hidden;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            th, td { 
+              padding: 12px 15px; 
+              text-align: left; 
+              border-bottom: 1px solid #e2e8f0; 
+            }
+            th { 
+              background: #f1f5f9; 
+              font-weight: 600;
+              color: #475569;
+            }
+            .total-row { 
+              background: #4f46e5; 
+              color: white; 
+              font-weight: bold; 
+              font-size: 18px;
+            }
+            .footer { 
+              margin-top: 40px; 
+              text-align: center; 
+              font-size: 12px; 
+              color: #64748b;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 20px;
+            }
+            .info-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 15px;
+              margin-top: 10px;
+            }
+            .info-item {
+              display: flex;
+              justify-content: space-between;
+              padding: 8px 0;
+              border-bottom: 1px solid #e2e8f0;
+            }
+            .info-label {
+              font-weight: 600;
+              color: #475569;
+            }
+            .info-value {
+              color: #1e293b;
+            }
             @media print {
               body { margin: 0; }
-              .no-print { display: none; }
+              .container { padding: 10px; }
+              .no-print { display: none !important; }
             }
           </style>
         </head>
-        <body onload="window.print(); window.close();">
-          ${printContents}
+        <body>
+          <div class="container">
+            ${printContent.innerHTML}
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              };
+            };
+          </script>
         </body>
       </html>
-    `;
-
-    window.print();
-    document.body.innerHTML = originalContents;
-    window.location.reload();
+    `);
+    
+    printWindow.document.close();
   };
 
   const sendWhatsApp = () => {
@@ -137,56 +250,74 @@ export const InvoiceReceipt = ({ invoice, open, onOpenChange }: InvoiceReceiptPr
         
         <div id="invoice-content" className="p-6 bg-white">
           {/* Cabeçalho com Logo */}
-          <div className="text-center border-b-2 border-gray-300 pb-6 mb-8">
+          <div className="header text-center border-b-3 border-indigo-600 pb-6 mb-8">
             {companyLogo && (
               <img 
                 src={companyLogo} 
                 alt="Logo da empresa" 
-                className="mx-auto mb-4 max-w-[150px] max-h-[80px] object-contain"
+                className="logo mx-auto mb-4 max-w-[150px] max-h-[80px] object-contain"
               />
             )}
-            <h1 className="text-2xl font-bold text-gray-800">NOTA DE SERVIÇO</h1>
-            <p className="text-lg font-semibold text-gray-600">Nº {invoice.codigo_nf || 'N/A'}</p>
+            <h1 className="company-title text-3xl font-bold text-indigo-600">NOTA DE SERVIÇO</h1>
+            <p className="invoice-number text-lg font-semibold text-gray-600">Nº {invoice.codigo_nf || 'N/A'}</p>
           </div>
 
           {/* Dados da Empresa */}
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold mb-3 text-gray-800">Prestador de Serviços</h2>
-            <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="section mb-8">
+            <h2 className="section-title text-lg font-semibold mb-3 text-gray-800">🏢 Prestador de Serviços</h2>
+            <div className="section-content bg-white p-4 rounded-lg">
               <p className="font-semibold text-lg">{companyData.nome}</p>
               {companyData.cnpj && (
-                <p><strong>CNPJ:</strong> {companyData.cnpj}</p>
+                <div className="info-item">
+                  <span className="info-label">CNPJ:</span>
+                  <span className="info-value">{companyData.cnpj}</span>
+                </div>
               )}
               {companyData.endereco && (
-                <p><strong>Endereço:</strong> {companyData.endereco}</p>
+                <div className="info-item">
+                  <span className="info-label">Endereço:</span>
+                  <span className="info-value">{companyData.endereco}</span>
+                </div>
               )}
               {companyData.cidade && (
-                <p><strong>Cidade:</strong> {companyData.cidade}</p>
+                <div className="info-item">
+                  <span className="info-label">Cidade:</span>
+                  <span className="info-value">{companyData.cidade}</span>
+                </div>
               )}
             </div>
           </div>
 
           {/* Dados do Cliente */}
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold mb-3 text-gray-800">Tomador de Serviços</h2>
-            <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="section mb-8">
+            <h2 className="section-title text-lg font-semibold mb-3 text-gray-800">👤 Tomador de Serviços</h2>
+            <div className="section-content bg-white p-4 rounded-lg">
               <p className="font-semibold text-lg">{invoice.clientes?.nome}</p>
-              <p><strong>Telefone:</strong> {invoice.clientes?.telefone}</p>
+              <div className="info-item">
+                <span className="info-label">Telefone:</span>
+                <span className="info-value">{invoice.clientes?.telefone}</span>
+              </div>
               {invoice.clientes?.email && (
-                <p><strong>E-mail:</strong> {invoice.clientes.email}</p>
+                <div className="info-item">
+                  <span className="info-label">E-mail:</span>
+                  <span className="info-value">{invoice.clientes.email}</span>
+                </div>
               )}
               {invoice.clientes?.endereco && (
-                <p><strong>Endereço:</strong> {invoice.clientes.endereco}</p>
+                <div className="info-item">
+                  <span className="info-label">Endereço:</span>
+                  <span className="info-value">{invoice.clientes.endereco}</span>
+                </div>
               )}
             </div>
           </div>
 
           {/* Detalhes do Serviço */}
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold mb-3 text-gray-800">Discriminação dos Serviços</h2>
+          <div className="section mb-8">
+            <h2 className="section-title text-lg font-semibold mb-3 text-gray-800">📋 Discriminação dos Serviços</h2>
             <table className="w-full border-collapse border border-gray-300">
               <thead>
-                <tr className="bg-gray-100">
+                <tr className="bg-gray-50">
                   <th className="border border-gray-300 p-3 text-left">Descrição</th>
                   <th className="border border-gray-300 p-3 text-right">Valor</th>
                 </tr>
@@ -200,9 +331,9 @@ export const InvoiceReceipt = ({ invoice, open, onOpenChange }: InvoiceReceiptPr
                 </tr>
               </tbody>
               <tfoot>
-                <tr className="bg-gray-100">
-                  <td className="border border-gray-300 p-3 font-bold">TOTAL</td>
-                  <td className="border border-gray-300 p-3 text-right font-bold text-lg">
+                <tr className="total-row bg-indigo-600 text-white">
+                  <td className="border border-gray-300 p-3 font-bold text-white">TOTAL</td>
+                  <td className="border border-gray-300 p-3 text-right font-bold text-lg text-white">
                     R$ {invoice.valor.toFixed(2).replace('.', ',')}
                   </td>
                 </tr>
@@ -211,11 +342,18 @@ export const InvoiceReceipt = ({ invoice, open, onOpenChange }: InvoiceReceiptPr
           </div>
 
           {/* Informações Adicionais */}
-          <div className="mb-8">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p><strong>Forma de Pagamento:</strong> {(invoice.forma_pagamento || 'Não informado').toUpperCase()}</p>
-                <p><strong>Data de Emissão:</strong> {format(new Date(invoice.data_emissao), 'dd/MM/yyyy', { locale: ptBR })}</p>
+          <div className="section mb-8">
+            <h2 className="section-title text-lg font-semibold mb-3 text-gray-800">💳 Informações de Pagamento</h2>
+            <div className="section-content">
+              <div className="info-grid grid grid-cols-2 gap-4">
+                <div className="info-item">
+                  <span className="info-label">Forma de Pagamento:</span>
+                  <span className="info-value">{(invoice.forma_pagamento || 'Não informado').toUpperCase()}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Data de Emissão:</span>
+                  <span className="info-value">{format(new Date(invoice.data_emissao), 'dd/MM/yyyy', { locale: ptBR })}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -231,11 +369,15 @@ export const InvoiceReceipt = ({ invoice, open, onOpenChange }: InvoiceReceiptPr
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
+          <Button variant="outline" onClick={generatePDF} className="flex items-center gap-2">
+            <Printer className="h-4 w-4" />
+            Imprimir
+          </Button>
           <Button variant="outline" onClick={sendWhatsApp} className="flex items-center gap-2">
             <Send className="h-4 w-4" />
             Enviar WhatsApp
           </Button>
-          <Button onClick={generatePDF} className="flex items-center gap-2">
+          <Button onClick={generatePDF} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
             <Download className="h-4 w-4" />
             Gerar PDF
           </Button>

@@ -1,38 +1,29 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Building2, Upload, Settings, Bell, Smartphone, Palette, Zap, ImageIcon } from 'lucide-react';
+import { Settings, Bell, Palette, Zap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
 import { useTheme } from '@/hooks/useTheme';
+import { CompanySettings } from './CompanySettings';
 
 type Configuracao = Tables<'configuracoes'>;
 
 export const SettingsManager = () => {
-  const { userData } = useAuth();
+  const { userData, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const [configuracao, setConfiguracao] = useState<Configuracao | null>(null);
-  const [empresaNome, setEmpresaNome] = useState('');
-  const [empresaRamo, setEmpresaRamo] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (userData?.empresa) {
+    if (userData?.empresa?.id) {
       loadConfiguracoes();
-      setEmpresaNome(userData.empresa.nome);
-      setEmpresaRamo(userData.empresa.ramo);
     }
   }, [userData]);
 
@@ -89,29 +80,6 @@ export const SettingsManager = () => {
     }
   };
 
-  const saveEmpresaInfo = async () => {
-    if (!userData?.empresa?.id) return;
-
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from('empresas')
-        .update({
-          nome: empresaNome,
-          ramo: empresaRamo
-        })
-        .eq('id', userData.empresa.id);
-
-      if (error) throw error;
-      toast.success('Informações da empresa atualizadas!');
-    } catch (error) {
-      console.error('Erro ao salvar informações da empresa:', error);
-      toast.error('Erro ao salvar informações da empresa');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const updateConfiguracao = async (campo: keyof Configuracao, valor: any) => {
     if (!configuracao) return;
 
@@ -137,58 +105,6 @@ export const SettingsManager = () => {
     }
   };
 
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !userData?.id) return;
-
-    // Validar tipo e tamanho do arquivo
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('Formato não suportado. Use PNG, JPEG ou SVG.');
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Arquivo muito grande. Máximo 2MB.');
-      return;
-    }
-
-    setIsUploadingLogo(true);
-    try {
-      // Upload para o storage
-      const fileName = `${userData.id}/logo.${file.type.split('/')[1]}`;
-      const { error: uploadError } = await supabase.storage
-        .from('company-logos')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('company-logos')
-        .getPublicUrl(fileName);
-
-      // Atualizar configuração com nova URL
-      await updateConfiguracao('logo_url', publicUrl);
-      
-      // Também atualizar logo_url na tabela empresas para compatibilidade
-      await supabase
-        .from('empresas')
-        .update({ logo_url: publicUrl })
-        .eq('id', userData.empresa?.id);
-
-      toast.success('Logo atualizado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao fazer upload do logo:', error);
-      toast.error('Erro ao fazer upload do logo');
-    } finally {
-      setIsUploadingLogo(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
   const getPlanoInfo = (plano: string) => {
     const planos = {
       basico: { label: 'Básico', color: 'bg-green-100 text-green-800' },
@@ -211,98 +127,8 @@ export const SettingsManager = () => {
 
   return (
     <div className="space-y-8">
-      {/* Informações da Empresa */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Informações da Empresa
-          </CardTitle>
-          <CardDescription>
-            Gerencie as informações básicas da sua empresa
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center space-x-6">
-            <div>
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={configuracao?.logo_url || ''} />
-                <AvatarFallback className="text-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white">
-                  {empresaNome.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <div className="flex-1 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="empresa-nome">Nome da Empresa</Label>
-                  <Input
-                    id="empresa-nome"
-                    value={empresaNome}
-                    onChange={(e) => setEmpresaNome(e.target.value)}
-                    placeholder="Nome da sua empresa"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="empresa-ramo">Ramo de Atuação</Label>
-                  <Input
-                    id="empresa-ramo"
-                    value={empresaRamo}
-                    onChange={(e) => setEmpresaRamo(e.target.value)}
-                    placeholder="Ex: Beleza, Consultoria, etc."
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Button
-                  onClick={saveEmpresaInfo}
-                  disabled={isSaving}
-                  className="flex items-center gap-2"
-                >
-                  {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-                </Button>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Plano:</span>
-                  <Badge className={getPlanoInfo(userData?.empresa?.plano || 'basico').color}>
-                    {getPlanoInfo(userData?.empresa?.plano || 'basico').label}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <ImageIcon className="h-4 w-4" />
-              Logo da Empresa
-            </Label>
-            <div className="flex items-center gap-4">
-              <Input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/svg+xml"
-                onChange={handleLogoUpload}
-                className="flex-1"
-                disabled={isUploadingLogo}
-              />
-              <Button 
-                variant="outline" 
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploadingLogo}
-                className="flex items-center gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                {isUploadingLogo ? 'Enviando...' : 'Selecionar Logo'}
-              </Button>
-            </div>
-            <p className="text-sm text-gray-500">
-              A logo será exibida nas notas de serviço e no cabeçalho do sistema. Formatos aceitos: PNG, JPEG, SVG (máx. 2MB)
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Dados da Empresa */}
+      <CompanySettings />
 
       {/* Preferências do Sistema */}
       <Card>

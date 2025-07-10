@@ -1,5 +1,5 @@
 
-import { DashboardStats } from './DashboardStats';
+import { RealtimeStats } from './RealtimeStats';
 import { RevenueChart } from './RevenueChart';
 import { UpcomingAppointments } from './UpcomingAppointments';
 import { QuickActions } from './QuickActions';
@@ -20,7 +20,7 @@ export const Dashboard = () => {
         </p>
       </div>
 
-      <DashboardStats />
+      <RealtimeStats />
       
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">

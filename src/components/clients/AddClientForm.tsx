@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { useRateLimit } from '@/components/security/RateLimitProvider';
 
 interface AddClientFormProps {
   open: boolean;
@@ -25,6 +26,7 @@ interface AddClientFormProps {
 export const AddClientForm = ({ open, onOpenChange, onClientAdded }: AddClientFormProps) => {
   const { userData } = useAuth();
   const [loading, setLoading] = useState(false);
+  const { checkRateLimit } = useRateLimit();
   const [formData, setFormData] = useState({
     nome: '',
     telefone: '',
@@ -36,6 +38,10 @@ export const AddClientForm = ({ open, onOpenChange, onClientAdded }: AddClientFo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!checkRateLimit('create')) {
+      return;
+    }
+
     if (!formData.nome.trim() || !formData.telefone.trim()) {
       toast.error('Nome e telefone são obrigatórios');
       return;

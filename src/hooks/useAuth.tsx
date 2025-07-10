@@ -2,6 +2,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useRateLimit } from '@/components/security/RateLimitProvider';
 
 interface AuthContextType {
   user: User | null;
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
+  const { checkRateLimit } = useRateLimit();
 
   useEffect(() => {
     // Set up auth state listener
@@ -64,6 +66,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, userData: any) => {
+    if (!checkRateLimit('auth')) {
+      return { error: { message: 'Muitas tentativas. Aguarde um momento.' } };
+    }
+
     const redirectUrl = `${window.location.origin}/dashboard`;
     
     const { error } = await supabase.auth.signUp({
@@ -84,6 +90,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!checkRateLimit('auth')) {
+      return { error: { message: 'Muitas tentativas de login. Aguarde um momento.' } };
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
