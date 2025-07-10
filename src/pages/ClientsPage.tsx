@@ -1,4 +1,3 @@
-
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Clients } from '@/components/modules/Clients';
 

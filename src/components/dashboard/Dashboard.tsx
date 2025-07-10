@@ -1,4 +1,3 @@
-
 import { RealtimeStats } from './RealtimeStats';
 import { RevenueChart } from './RevenueChart';
 import { UpcomingAppointments } from './UpcomingAppointments';

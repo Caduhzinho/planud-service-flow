@@ -1,4 +1,3 @@
-
 import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Users, Calendar, DollarSign, FileText } from 'lucide-react';

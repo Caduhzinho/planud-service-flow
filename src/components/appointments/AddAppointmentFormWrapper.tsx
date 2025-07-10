@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { AddAppointmentForm } from './AddAppointmentForm';
 import { UpgradeModal } from '@/components/plans/UpgradeModal';

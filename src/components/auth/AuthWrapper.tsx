@@ -1,4 +1,3 @@
-
 import { ReactNode, useState, useEffect } from 'react';
 import { useAuthValidation } from '@/hooks/useAuthValidation';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';

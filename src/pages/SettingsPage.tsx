@@ -1,4 +1,3 @@
-
 import { Settings } from '@/components/modules/Settings';
 import { AppLayout } from '@/components/layout/AppLayout';
 

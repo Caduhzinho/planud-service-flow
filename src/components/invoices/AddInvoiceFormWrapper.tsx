@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { AddInvoiceForm } from './AddInvoiceForm';
 import { UpgradeModal } from '@/components/plans/UpgradeModal';

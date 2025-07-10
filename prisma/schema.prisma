@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Company {
+  id          String    @id @default(cuid())
+  name        String
+  cnpj        String    @unique
+  email       String
+  phone       String
+  address     String
+  logo        String?
+  users       User[]
+  clients     Client[]
+  appointments Appointment[]
+  serviceNotes ServiceNote[]
+  preferences CompanyPreferences?
+
+  @@map("companies")
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  email     String?
+  cpfCnpj   String?
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  appointments Appointment[]
+  serviceNotes ServiceNote[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("clients")
+}
+
+model Appointment {
+  id          String   @id @default(cuid())
+  date        DateTime
+  description String
+  status      String   @default("PENDING")
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id])
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  serviceNote ServiceNote?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("appointments")
+}
+
+model ServiceNote {
+  id            String   @id @default(cuid())
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id])
+  description   String
+  value         Float
+  paymentMethod String
+  status        String   @default("GENERATED")
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("service_notes")
+}
+
+model CompanyPreferences {
+  id              String  @id @default(cuid())
+  darkMode        Boolean @default(false)
+  autoSendWhatsApp Boolean @default(true)
+  autoSendEmail    Boolean @default(true)
+  autoGenerateNote Boolean @default(true)
+  companyId       String
+  company         Company @relation(fields: [companyId], references: [id])
+
+  @@map("company_preferences")
+}

@@ -1,4 +1,3 @@
-
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Appointments } from '@/components/modules/Appointments';
 
