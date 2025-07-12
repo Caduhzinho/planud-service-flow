@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Send, Download, Eye, X, Filter } from 'lucide-react';
+import { FileText, Send, Download, Eye, X, Filter, TrendingUp, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { InvoiceDetailsModal } from './InvoiceDetailsModal';
 import { InvoiceReceipt } from './InvoiceReceipt';
@@ -38,6 +38,12 @@ export const InvoicesManager = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [clientFilter, setClientFilter] = useState<string>('todos');
+  const [monthlyStats, setMonthlyStats] = useState({
+    totalValue: 0,
+    totalCount: 0,
+    avgValue: 0,
+    pendingCount: 0
+  });
   const { userData } = useAuth();
   const { toast } = useToast();
 
@@ -87,6 +93,7 @@ export const InvoicesManager = () => {
       }));
       
       setInvoices(typedData);
+      calculateMonthlyStats(typedData);
     } catch (error) {
       console.error('Erro ao carregar notas fiscais:', error);
       toast({
@@ -97,6 +104,29 @@ export const InvoicesManager = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const calculateMonthlyStats = (invoices: Invoice[]) => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const monthlyInvoices = invoices.filter(invoice => {
+      const invoiceDate = new Date(invoice.data_emissao);
+      return invoiceDate.getMonth() === currentMonth && 
+             invoiceDate.getFullYear() === currentYear;
+    });
+    
+    const totalValue = monthlyInvoices.reduce((sum, invoice) => sum + invoice.valor, 0);
+    const totalCount = monthlyInvoices.length;
+    const avgValue = totalCount > 0 ? totalValue / totalCount : 0;
+    const pendingCount = monthlyInvoices.filter(invoice => invoice.status === 'pendente').length;
+    
+    setMonthlyStats({
+      totalValue,
+      totalCount,
+      avgValue,
+      pendingCount
+    });
   };
 
   const applyFilters = () => {
@@ -225,6 +255,60 @@ export const InvoicesManager = () => {
 
   return (
     <div className="space-y-6">
+      {/* Estatísticas do Mês */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Valor Total (Mês)</p>
+                <p className="text-2xl font-bold text-green-600">
+                  R$ {monthlyStats.totalValue.toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Notas Emitidas</p>
+                <p className="text-2xl font-bold">{monthlyStats.totalCount}</p>
+              </div>
+              <FileText className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Valor Médio</p>
+                <p className="text-2xl font-bold">
+                  R$ {monthlyStats.avgValue.toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+              <Calendar className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-yellow-600">Pendentes</p>
+                <p className="text-2xl font-bold text-yellow-600">{monthlyStats.pendingCount}</p>
+              </div>
+              <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                <span className="text-yellow-600 font-bold">!</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Cards de Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>

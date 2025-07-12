@@ -4,7 +4,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Settings, Bell, Palette, Zap } from 'lucide-react';
+import { Settings, Bell, Palette, Zap, Save, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -19,6 +21,8 @@ export const SettingsManager = () => {
   const { theme, setTheme } = useTheme();
   const [configuracao, setConfiguracao] = useState<Configuracao | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (userData?.empresa?.id) {
@@ -97,10 +101,39 @@ export const SettingsManager = () => {
         setTheme(valor);
       }
       
-      toast.success('Configuração atualizada!');
+      setHasUnsavedChanges(true);
     } catch (error) {
       console.error('Erro ao atualizar configuração:', error);
       toast.error('Erro ao atualizar configuração');
+    }
+  };
+
+  const saveAllChanges = async () => {
+    if (!configuracao || !hasUnsavedChanges) return;
+    
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('configuracoes')
+        .update({
+          gerar_nota_automatica: configuracao.gerar_nota_automatica,
+          enviar_whatsapp_automatico: configuracao.enviar_whatsapp_automatico,
+          notificacoes_email: configuracao.notificacoes_email,
+          notificacoes_push: configuracao.notificacoes_push,
+          tema_visual: configuracao.tema_visual,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', configuracao.id);
+
+      if (error) throw error;
+      
+      setHasUnsavedChanges(false);
+      toast.success('Todas as configurações foram salvas!');
+    } catch (error) {
+      console.error('Erro ao salvar configurações:', error);
+      toast.error('Erro ao salvar configurações');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -128,6 +161,25 @@ export const SettingsManager = () => {
     <div className="space-y-8">
       {/* Dados da Empresa */}
       <CompanySettings />
+
+      {/* Alerta de mudanças não salvas */}
+      {hasUnsavedChanges && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <AlertCircle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-800 flex items-center justify-between">
+            <span>Você tem alterações não salvas nas configurações.</span>
+            <Button 
+              size="sm" 
+              onClick={saveAllChanges}
+              disabled={isSaving}
+              className="ml-4"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? 'Salvando...' : 'Salvar Agora'}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Preferências do Sistema */}
       <Card>

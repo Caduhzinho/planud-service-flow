@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useRateLimit } from '@/components/security/RateLimitProvider';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -12,6 +13,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   userData: any;
   setUserData: (data: any) => void;
+  refreshUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +25,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userData, setUserData] = useState<any>(null);
   const { checkRateLimit } = useRateLimit();
 
+  const fetchUserData = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select(`
+          *,
+          empresa:empresas(*)
+        `)
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        setUserData(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados do usuário:', error);
+      toast.error('Erro ao carregar dados do usuário');
+    }
+  };
+
+  const refreshUserData = async () => {
+    if (user?.id) {
+      await fetchUserData(user.id);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -32,20 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (session?.user) {
           // Fetch user data from our custom table
-          setTimeout(async () => {
-            const { data } = await supabase
-              .from('usuarios')
-              .select(`
-                *,
-                empresa:empresas(*)
-              `)
-              .eq('id', session.user.id)
-              .single();
-            
-            if (data) {
-              setUserData(data);
-            }
-          }, 0);
+          await fetchUserData(session.user.id);
         } else {
           setUserData(null);
         }
@@ -114,7 +131,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signIn,
       signOut,
       userData,
-      setUserData
+      setUserData,
+      refreshUserData
     }}>
       {children}
     </AuthContext.Provider>
