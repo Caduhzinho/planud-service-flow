@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Phone, Mail, MapPin, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Phone, Mail, MapPin, Edit, Trash2, Download, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { AddClientForm } from './AddClientForm';
@@ -27,6 +27,7 @@ export const ClientsManager = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
 
   const fetchClients = async () => {
     if (!user?.id) return;
@@ -49,6 +50,53 @@ export const ClientsManager = () => {
       toast.error('Erro ao carregar clientes');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const exportClients = () => {
+    const csvContent = [
+      ['Nome', 'Telefone', 'Email', 'Endereço', 'Observações'],
+      ...clients.map(client => [
+        client.nome,
+        client.telefone,
+        client.email || '',
+        client.endereco || '',
+        client.observacoes || ''
+      ])
+    ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Lista de clientes exportada com sucesso!');
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedClients.length === 0) return;
+    
+    if (!confirm(`Tem certeza que deseja excluir ${selectedClients.length} cliente(s)?`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('clientes')
+        .delete()
+        .in('id', selectedClients);
+
+      if (error) throw error;
+
+      toast.success(`${selectedClients.length} cliente(s) excluído(s) com sucesso!`);
+      setSelectedClients([]);
+      fetchClients();
+    } catch (error) {
+      console.error('Erro ao excluir clientes:', error);
+      toast.error('Erro ao excluir clientes');
     }
   };
 
@@ -110,13 +158,33 @@ export const ClientsManager = () => {
             Gerencie seu portfólio de clientes ({clients.length} clientes)
           </p>
         </div>
-        <Button 
-          onClick={() => setShowAddForm(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 h-11 px-5 rounded-xl font-medium"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Cliente
-        </Button>
+        <div className="flex gap-2">
+          {selectedClients.length > 0 && (
+            <Button 
+              variant="destructive"
+              onClick={handleBulkDelete}
+              className="h-11 px-4 rounded-xl"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir ({selectedClients.length})
+            </Button>
+          )}
+          <Button 
+            variant="outline"
+            onClick={exportClients}
+            className="h-11 px-4 rounded-xl"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Exportar
+          </Button>
+          <Button 
+            onClick={() => setShowAddForm(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 h-11 px-5 rounded-xl font-medium"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       {/* Barra de Pesquisa */}
@@ -151,6 +219,20 @@ export const ClientsManager = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client) => (
             <Card key={client.id} className="p-6 rounded-2xl border-0 shadow-md hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <input
+                  type="checkbox"
+                  checked={selectedClients.includes(client.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedClients([...selectedClients, client.id]);
+                    } else {
+                      setSelectedClients(selectedClients.filter(id => id !== client.id));
+                    }
+                  }}
+                  className="rounded border-gray-300"
+                />
+              </div>
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-12 w-12">

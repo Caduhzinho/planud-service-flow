@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { TrendingUp, TrendingDown, Users, Calendar, DollarSign, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, Calendar, DollarSign, Target, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface RealtimeStatsData {
   clientesTotal: number;
@@ -26,6 +28,7 @@ export const RealtimeStats = () => {
     agendamentosPendentes: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (userData?.empresa_id) {
@@ -37,8 +40,10 @@ export const RealtimeStats = () => {
     }
   }, [userData?.empresa_id]);
 
-  const loadStats = async () => {
+  const loadStats = async (showToast = false) => {
     if (!userData?.empresa_id) return;
+
+    if (showToast) setIsRefreshing(true);
 
     try {
       const today = new Date();
@@ -102,11 +107,23 @@ export const RealtimeStats = () => {
         crescimentoMensal,
         agendamentosPendentes: agendamentosPendentes || 0
       });
+      
+      if (showToast) {
+        toast.success('Dados atualizados com sucesso!');
+      }
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
+      if (showToast) {
+        toast.error('Erro ao atualizar dados');
+      }
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    loadStats(true);
   };
 
   const progressoMeta = Math.min((stats.receitaMensal / stats.metaMensal) * 100, 100);
@@ -128,6 +145,24 @@ export const RealtimeStats = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header com botão de refresh */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Estatísticas em Tempo Real</h2>
+          <p className="text-gray-600">Dados atualizados automaticamente a cada 30 segundos</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Atualizando...' : 'Atualizar'}
+        </Button>
+      </div>
+
       {/* Cards de Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">

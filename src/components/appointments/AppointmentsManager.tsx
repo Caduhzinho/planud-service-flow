@@ -10,7 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Calendar, Clock, User, DollarSign, Filter, Search } from 'lucide-react';
+import { Plus, Calendar, Clock, User, DollarSign, Filter, Search, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { AddAppointmentForm } from './AddAppointmentForm';
@@ -48,6 +49,7 @@ export const AppointmentsManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('upcoming');
+  const [conflictWarnings, setConflictWarnings] = useState<string[]>([]);
 
   const fetchAppointments = async () => {
     console.log('Iniciando busca de agendamentos...');
@@ -83,6 +85,9 @@ export const AppointmentsManager = () => {
       
       setAppointments(data || []);
       console.log('Agendamentos carregados:', data?.length || 0);
+      
+      // Verificar conflitos de horário
+      checkTimeConflicts(data || []);
     } catch (error: any) {
       console.error('Erro ao buscar agendamentos:', error);
       setError(error.message || 'Erro ao carregar agendamentos. Tente novamente.');
@@ -90,6 +95,38 @@ export const AppointmentsManager = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const checkTimeConflicts = (appointments: Appointment[]) => {
+    const conflicts: string[] = [];
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    const upcomingAppointments = appointments.filter(app => {
+      const appDate = new Date(app.data_hora);
+      return appDate >= today && appDate <= nextWeek && app.status !== 'Cancelado';
+    });
+    
+    // Agrupar por data/hora
+    const timeGroups: { [key: string]: Appointment[] } = {};
+    upcomingAppointments.forEach(app => {
+      const timeKey = new Date(app.data_hora).toISOString();
+      if (!timeGroups[timeKey]) {
+        timeGroups[timeKey] = [];
+      }
+      timeGroups[timeKey].push(app);
+    });
+    
+    // Verificar conflitos
+    Object.entries(timeGroups).forEach(([timeKey, apps]) => {
+      if (apps.length > 1) {
+        const dateTime = new Date(timeKey);
+        const formattedDate = format(dateTime, "dd/MM 'às' HH:mm", { locale: ptBR });
+        conflicts.push(`${apps.length} agendamentos no mesmo horário: ${formattedDate}`);
+      }
+    });
+    
+    setConflictWarnings(conflicts);
   };
 
   useEffect(() => {
@@ -194,6 +231,21 @@ export const AppointmentsManager = () => {
           Novo Agendamento
         </Button>
       </div>
+
+      {/* Alertas de conflito */}
+      {conflictWarnings.length > 0 && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <AlertCircle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-800">
+            <strong>Atenção - Conflitos de horário detectados:</strong>
+            <ul className="mt-2 list-disc list-inside">
+              {conflictWarnings.map((warning, index) => (
+                <li key={index}>{warning}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-4">
